@@ -1,0 +1,22 @@
+编程互动课堂 · 在线版（GitHub Pages）
+版本：v20261022.2
+本压缩包仅含在线静态网站，不含离线启动脚本或 Windows 运行环境。
+
+1. 解压本压缩包，打开 编程互动课堂_在线版 文件夹。
+2. 将此文件夹内部的全部内容上传到 GitHub 仓库根目录。
+   仓库根目录应直接看到 index.html 和 vendor 文件夹，不要再套一层文件夹。
+   必须完整上传 vendor 和 .nojekyll，不能只上传 HTML。
+3. 仓库 Settings → Pages → Source 选择 Deploy from a branch。
+   分支 main，目录 /(root)，保存并等待发布完成。
+4. 打开 GitHub 给出的 HTTPS 地址。首次打开可能自动刷新一次。
+5. 编辑区顶部应显示“纯浏览器版 · v20261022.2”。
+
+不需要安装 Python、C 编译器，也不需要运行后台服务器。
+首次运行按需加载约 40 MB 的解释器/编译器文件；之后会使用浏览器缓存。
+建议使用较新的桌面版 Chrome / Edge，允许本站 Service Worker。
+运行到 input() / scanf() 时在网页输入框填写内容，按回车继续。
+
+部署后自检：在网站地址末尾加 runtime-check.html，点击“开始验证”。
+应看到 Python 与 C 均通过真实执行、两次输入、结果 55 的检查。
+
+更多说明见 README.md。现有离线版继续单独保存在 编程互动课堂.zip。

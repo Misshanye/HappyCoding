@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>编程互动课堂 · 部署自检</title><style>body{max-width:800px;margin:40px auto;padding:0 20px;font:16px/1.7 system-ui,"Microsoft YaHei",sans-serif;background:#f5f8f0;color:#253822}button{padding:10px 20px;background:#659f38;color:white;border:0;border-radius:8px;font:inherit;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:20px;border-radius:10px}a{color:#375e20}</style><script src="browser-runtime.js"></script></head><body><h1>编程互动课堂 · 部署自检</h1><p>验证当前网站的 Python / C 是否能真实运行并接收两次逐次输入。测试会自动输入 80 和 25，期望结果为 55。</p><button id="check" disabled>开始验证</button><pre id="status" role="status">正在准备浏览器运行环境…</pre><p><a href="./">返回课堂</a></p><script>
+const box=document.getElementById('status'),button=document.getElementById('check');
+BrowserClassroom.ready().then(()=>{box.textContent='已就绪。首次验证 C 时需要加载编译器，请耐心等待。';button.disabled=false;}).catch(e=>box.textContent=e.message);
+button.onclick=async()=>{button.disabled=true;box.textContent='开始验证…\n';let passed=0;
+try{for(const language of ['python','c']){
+ let inputs=0;const code=language==='python'?'hp_zombie=int(input("血量："))\nx=int(input("攻击："))\nhp_zombie=max(0,hp_zombie-x)\nprint(hp_zombie)':'#include <stdio.h>\nint main(void){int hp_zombie=0;int x=0;printf("血量：");scanf("%d",&hp_zombie);printf("攻击：");scanf("%d",&x);hp_zombie-=x;printf("%d\\n",hp_zombie);return 0;}';
+ const result=await BrowserClassroom.run({language,code,interactive:true,stdin:''},e=>{if(e.type==='input'){inputs++;BrowserClassroom.input(inputs===1?'80':'25');}if(e.type==='status')box.textContent+=e.text+'\n';});
+ if(result.error||inputs!==2||result.env.hp_zombie!==55)throw new Error(language+' 验证失败：'+(result.error?.traceback||JSON.stringify(result)));
+ box.textContent+=language+'：真实执行、两次输入、结果 55 —— 通过\n';passed++;
+}box.textContent+='两种语言均通过。可返回课堂使用。';
+}catch(e){box.textContent+='验证未通过：'+e.message;}finally{button.disabled=false;}};
+</script></body></html>
