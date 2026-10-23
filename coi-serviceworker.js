@@ -1,5 +1,5 @@
 /* Supply isolation headers on static hosts (including GitHub Pages). All assets stay same-origin. */
-const CACHE='programming-classroom-v20261023-web3';
+const CACHE='programming-classroom-v1-3-ui1';
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('programming-classroom-')&&key!==CACHE)await caches.delete(key);await self.clients.claim();})()));
 self.addEventListener('fetch',event=>{

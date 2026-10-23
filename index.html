@@ -331,14 +331,13 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
   <!-- ================= 右列：题目 + 代码区 ================= -->
   <div>
     <section class="card">
-      <h3>⌨️ 代码编辑区 <span class="tag">Python / C 浏览器执行 · Ctrl + Enter 运行</span></h3>
+      <h3>⌨️ 代码编辑区 <span class="tag" id="releaseVersion">V1.3</span></h3>
       <div class="body">
         <div class="btnrow" style="margin:0 0 12px" role="group" aria-label="编辑器模式">
 <button id="modeQuiz" class="btn" aria-pressed="true">🧩 任务与纠错案例</button>
 <button id="modeFree" class="btn sec" aria-pressed="false">✍ 自由编程</button>
-<label for="languageSelect" style="margin-left:6px;font-weight:800">编程语言</label>
 <select id="languageSelect" style="font:inherit;padding:8px;border:1px solid #a4bb96;border-radius:9px" aria-label="编程语言"><option value="python">Python</option><option value="c">C 语言</option></select>
-<span class="tag" id="releaseVersion" style="background:#e8f6dc;color:#315f15;font-weight:800">纯浏览器版 · v20261023.3</span><span id="runtimeStatus" class="tag">浏览器运行</span></div>
+<span id="runtimeStatus" class="tag" hidden></span></div>
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
 <p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
@@ -1227,12 +1226,13 @@ function updateModeUI(){
   $('levelnav').parentElement.hidden=free;
   $('badgeProgress').hidden=free;
   $('btnReload').textContent=free?'↺ 重置自由编程示例':'↺ 还原当前错误案例';
-  $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'每关只有一个固定任务。下方编辑器展示针对该任务的常见错误案例；切换案例不会更换任务。案例开头已给出变量声明及输入语句；运行后在控制台依次输入，再观察判断结果。';
+  $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'';
+  $('modeHelp').hidden=!free;
   if(free){
     $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有同行、射手存活且僵尸实际掉血，才播放命中动画。</p></div>';
     $('flowLegend').textContent='这是绑定说明。自由编程的实际执行顺序以代码行高亮为准。';
   }
-  $('runtimeStatus').textContent=location.protocol==='file:'?'请通过网站地址打开':(selectedLanguage==='c'?'Clang · 浏览器 C':'CPython · 浏览器 Python');
+  $('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;
   if(location.protocol==='file:') say('<span class="err">请通过 HTTPS 网站地址打开在线版，不能从文件管理器直接打开 HTML。</span>');
 }
 function changeMode(mode){
@@ -1367,7 +1367,7 @@ async function executeCode(single){
   lockUI(true); say('<span class="sys">'+(selectedLanguage==='c'?'C 正在编译并运行…':'Python 正在运行…')+'</span>');
   try{
     const result=await BrowserClassroom.run({code:editor.value,language:selectedLanguage,stdin:$('stdinText').value,interactive},event=>{
-      if(event.type==='status'){$('runtimeStatus').textContent=event.text;return;}
+      if(event.type==='status'){$('runtimeStatus').hidden=false;$('runtimeStatus').textContent=event.text;return;}
       if(epoch!==replayEpoch)return;
       if(event.type==='input'){
         $('liveInputForm').hidden=false;$('inputStatus').textContent='程序正在等待键盘输入。';$('liveInput').focus();
@@ -1431,7 +1431,7 @@ async function executeCode(single){
     applyBound(result.env,true); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
   }catch(e){
     say('<span class="err">'+escHtml(e.message)+'<br>请检查网站资源是否加载完整，刷新后重试；建议使用新版 Chrome / Edge。</span>');
-  }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent=selectedLanguage==='c'?'Clang · 浏览器 C':'CPython · 浏览器 Python';}
+  }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;}
 }
 // Prevent stale animation callbacks from changing state after Stop / mode switches.
 fireBullet=function(cb){
@@ -1466,7 +1466,7 @@ updateModeUI();
 
 </script>
 <script>
-BrowserClassroom.ready().then(()=>{window.ClassroomAnalytics?.start();document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').textContent=e.message;});
+BrowserClassroom.ready().then(()=>{window.ClassroomAnalytics?.start();document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').hidden=false;document.getElementById('runtimeStatus').textContent=e.message;});
 </script>
 </body>
 </html>
