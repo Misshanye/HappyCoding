@@ -256,6 +256,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 .stage-output-text{font-size:16px;font-weight:750;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;max-height:3em;overflow:auto;scrollbar-width:thin;}
 @media(prefers-reduced-motion:no-preference){.stage-output.fresh{animation:captionPulse .25s ease-out}}
 @keyframes captionPulse{from{box-shadow:0 0 0 3px #ffd24b80}to{box-shadow:0 0 0 0 transparent}}
+.code-actions{flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:6px;padding-bottom:4px}.code-actions .btn{flex-shrink:0;font-size:13px;padding:9px 10px}.code-actions [hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -279,13 +280,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 
 <div class="wrap">
     <section class="card" id="questionCard">
-      <h3>📋 当前关卡任务 <span class="tag" id="taskPill" style="background:#e8f1fb;color:#2f6db3">同一任务 · 错误案例</span><span class="tag" id="tagLevel">关卡</span></h3>
+      <h3>📋 当前关卡任务<span class="tag" id="tagLevel">关卡</span></h3>
       <div class="body story" id="taskBox"></div>
-      <div class="body tight" style="padding:0 14px 12px">
-        <div class="btnrow" style="justify-content:flex-end;margin-top:0">
-          <button class="btn warn sm" id="btnNextTask">🎲 随机错误测试</button>
-        </div>
-      </div>
     </section>
 <div class="grid">
 
@@ -342,7 +338,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <button id="modeFree" class="btn sec" aria-pressed="false">✍ 自由编程</button>
 <label for="languageSelect" style="margin-left:6px;font-weight:800">编程语言</label>
 <select id="languageSelect" style="font:inherit;padding:8px;border:1px solid #a4bb96;border-radius:9px" aria-label="编程语言"><option value="python">Python</option><option value="c">C 语言</option></select>
-<span class="tag" id="releaseVersion" style="background:#e8f6dc;color:#315f15;font-weight:800">纯浏览器版 · v20261022.2</span><span id="runtimeStatus" class="tag">浏览器运行</span></div>
+<span class="tag" id="releaseVersion" style="background:#e8f6dc;color:#315f15;font-weight:800">纯浏览器版 · v20261023.3</span><span id="runtimeStatus" class="tag">浏览器运行</span></div>
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
 <p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
@@ -356,11 +352,12 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
             <textarea id="editor" spellcheck="false" wrap="off" autocomplete="off"></textarea>
           </div>
         </div>
-        <div class="btnrow">
+        <div class="btnrow code-actions">
           <button class="btn" id="btnRun">▶ 运行代码</button>
           <button class="btn ghost" id="btnStep">⏭ 单步演示</button>
           <button class="btn sec" id="btnStop">⏹ 停止运行 / 演示</button>
           <button class="btn sec" id="btnReload">↺ 还原当前错误案例</button>
+          <button class="btn warn" id="btnNextTask" style="margin-left:auto">🎲 随机错误案例 <span id="taskPill">1/7</span></button>
         </div>
         <div style="margin-top:12px"></div>
         <form id="liveInputForm" hidden style="padding:10px;border:2px solid #79a942;border-radius:8px;background:#f4ffe9;margin-bottom:8px">
@@ -379,6 +376,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <p class="foot">编程互动课堂 · 纯浏览器版 ｜ Python / C 真实执行 · 无需安装 · 无需运行服务器</p>
 </div>
 <script src="./browser-runtime.js"></script>
+<script src="./analytics-config.js"></script>
+<script src="./classroom-analytics.js"></script>
 <script>
 /* 页面一进来先留一份"原始源码"快照（还没被脚本渲染过），供一键下载原封不动的课件文件 */
 const RAW_HTML='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
@@ -1028,7 +1027,10 @@ function judge(lv,out){
 function doneList(lv){ return progress[lv.id]||[]; }
 function markDone(lv,id){
   const arr=doneList(lv);
-  if(arr.indexOf(id)<0) arr.push(id);
+  if(arr.indexOf(id)<0){
+    arr.push(id);
+    window.ClassroomAnalytics?.success({language:selectedLanguage,mode:'quiz',level:lv.id,case:id});
+  }
   progress[lv.id]=arr;
   try{ localStorage.setItem('pvz_branch_tasks_v3_'+selectedLanguage,JSON.stringify(progress)); }catch(e){}
   renderNav(); renderTask();
@@ -1165,7 +1167,7 @@ function loadTask(t,keepData){
 }
 function renderTask(){
   const lv=curLevel(), t=curTask(), idx=lv.tasks.indexOf(t)+1;
-  $('taskPill').textContent='同一任务 · 案例 '+idx+' / '+lv.tasks.length;
+  $('taskPill').textContent=idx+'/'+lv.tasks.length;
   $('taskBox').innerHTML=`
     <div id="levelMission" style="font-size:16px;line-height:1.9"><b>🎯 任务 ${cur+1}：</b>${escHtml(lv.mission)}</div>
     <div id="missionRule" style="line-height:1.8;margin:8px 0 14px;color:#52634a">${escHtml(lv.rule)}</div>
@@ -1221,6 +1223,7 @@ function updateModeUI(){
   $('modeFree').className=free?'btn':'btn sec'; $('modeQuiz').className=free?'btn sec':'btn';
   $('modeFree').setAttribute('aria-pressed',String(free)); $('modeQuiz').setAttribute('aria-pressed',String(!free));
   $('questionCard').hidden=free;
+  $('btnNextTask').hidden=free;
   $('levelnav').parentElement.hidden=free;
   $('badgeProgress').hidden=free;
   $('btnReload').textContent=free?'↺ 重置自由编程示例':'↺ 还原当前错误案例';
@@ -1335,8 +1338,8 @@ async function readProgramStream(response,onEvent){
   return result;
 }
 function showResult(result,before,judgeResult){
-  const error=result.error;
-  say((result.stdout?'<span>'+escHtml(result.stdout).replace(/\n/g,'<br>')+'</span>':'<span class="ph">（程序没有输出）</span>')+
+  const error=result.error, display=result.transcript??result.stdout;
+  say((display?'<span>'+escHtml(display).replace(/\n/g,'<br>')+'</span>':'<span class="ph">（程序没有输出）</span>')+
     (result.diagnostics&&!error?'<br><span class="sys" style="white-space:pre-wrap">'+escHtml(result.diagnostics)+'</span>':'')+
     (error?'<br><span class="err" style="white-space:pre-wrap">'+escHtml(error.traceback)+'</span>':''));
   renderEnvDiff(before,result.env);
@@ -1360,6 +1363,7 @@ async function executeCode(single){
   let latestEnv={};
   activeRunId=Date.now().toString(36)+Math.random().toString(36).slice(2);
   const interactive=!$('stdinText').value.trim();
+  window.ClassroomAnalytics?.run({language:selectedLanguage,mode:ideMode,level:ideMode==='quiz'?curLevel().id:undefined,execution:single?'step':'run'});
   lockUI(true); say('<span class="sys">'+(selectedLanguage==='c'?'C 正在编译并运行…':'Python 正在运行…')+'</span>');
   try{
     const result=await BrowserClassroom.run({code:editor.value,language:selectedLanguage,stdin:$('stdinText').value,interactive},event=>{
@@ -1374,6 +1378,7 @@ async function executeCode(single){
       if(['result','aborted','input_done','step','output'].includes(event.type))$('liveInputForm').hidden=true;
       if(event.type==='output')latestEnv=event.env;
       else if(event.type==='step')latestEnv=event.step.vars;
+      if(event.type==='input_echo'){appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');return;}
       if(single){
         if(event.type==='output'){
           appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
@@ -1418,12 +1423,12 @@ async function executeCode(single){
       if(epoch!==replayEpoch)return;
       const st=steps[i]; clearMarks(); markLine(st.line,'run');
       applyBound(st.vars,true); renderVars(st.vars);
-      if(single){const printed=result.stdout.slice(0,st.output_len||0);if(printed!==stagePrinted){stagePrinted=printed;showStageOutput(printed);}}
-      if(single) say('<span class="sys">第 '+(i+1)+' / '+steps.length+' 步 · 已执行第 '+st.line+' 行</span>');
+      if(single){const printed=(result.transcript??result.stdout).slice(0,st.display_len??st.output_len??0);if(printed!==stagePrinted){stagePrinted=printed;showStageOutput(printed);}}
+      if(single) say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span><br><span class="sys">第 '+(i+1)+' / '+steps.length+' 步 · 已执行第 '+st.line+' 行</span>');
       await new Promise(resolve=>setTimeout(resolve,single?650:180));
     }
     if(epoch!==replayEpoch)return;
-    applyBound(result.env,true); if(result.stdout!==stagePrinted){stagePrinted=result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
+    applyBound(result.env,true); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
   }catch(e){
     say('<span class="err">'+escHtml(e.message)+'<br>请检查网站资源是否加载完整，刷新后重试；建议使用新版 Chrome / Edge。</span>');
   }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent=selectedLanguage==='c'?'Clang · 浏览器 C':'CPython · 浏览器 Python';}
@@ -1461,7 +1466,7 @@ updateModeUI();
 
 </script>
 <script>
-BrowserClassroom.ready().then(()=>{document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').textContent=e.message;});
+BrowserClassroom.ready().then(()=>{window.ClassroomAnalytics?.start();document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').textContent=e.message;});
 </script>
 </body>
 </html>

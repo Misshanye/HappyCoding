@@ -9,7 +9,7 @@ function readInput(){
  emit({type:'input',line:inputEvent?.line||cLine,env:inputEvent?.env||{...env}});inputEvent=null;
  while(Atomics.load(control,0)===0){const outcome=Atomics.wait(control,0,0,600000);if(outcome==='timed-out')throw new Error('等待输入超过 10 分钟。');}
  const length=Atomics.load(control,1),bytes=new Uint8Array(shared,16,length).slice();Atomics.store(control,0,0);
- return decoder.decode(bytes);
+ const value=decoder.decode(bytes);emit({type:'input_echo',text:value});return value;
 }
 function handlePythonLine(line){
  if(!line.trim())return;let event;try{event=JSON.parse(line);}catch(e){return;}
@@ -58,7 +58,7 @@ function handleCLine(line){
  }else if(kind==='output'){
   stdout+=event.text;cLine=event.line||cLine;
   emit({type:'output',text:event.text,line:cLine,env:{...env}});
-  if(steps.length<1500)steps.push({line:cLine,vars:{...env},desc:'printf 输出后',output_len:stdout.length});
+  if(steps.length<1500){const step={line:cLine,vars:{...env},desc:'printf 输出后',output_len:stdout.length};steps.push(step);emit({type:'step',step});}
  }else if(kind==='input'){cLine=event.line||cLine;}
  else if(kind==='input_done')emit({type:'input_done'});
  else if(kind==='limit')throw new Error('程序超过课堂输出或执行步数限制');

@@ -16,7 +16,7 @@ window.BrowserClassroom=(()=>{
   if(typeof SharedArrayBuffer==='undefined')throw new Error('浏览器未提供交互输入所需的共享内存。');
  }
  const readiness=ready();readiness.catch(()=>{});
- function settle(result){if(!current)return;const c=current;current=null;clearTimeout(c.timer);c.resolve(result);}
+ function settle(result){if(!current)return;const c=current;current=null;clearTimeout(c.timer);result.transcript=c.transcript;result.steps=(result.steps||[]).map((step,i)=>({...step,display_len:c.displayLengths[i]??c.transcript.length}));c.resolve(result);}
  function reset(){worker?.terminate();worker=null;}
  function watchdog(ms){if(!current)return;clearTimeout(current.timer);current.timer=setTimeout(()=>{const c=current;reset();settle({type:'aborted',env:c.env,steps:[],stdout:c.stdout,error:{kind:'TimeoutError',line:1,traceback:'程序超过课堂运行时限，已停止。'}});},ms);}
  function getWorker(){
@@ -26,8 +26,9 @@ window.BrowserClassroom=(()=>{
     if(e.type==='result'){settle(e);return;}
     if(e.type==='input')watchdog(600000);
     else if(e.type==='run-start'||e.type==='input_done')watchdog(8000);
-    if(e.type==='step')current.env=e.step.vars;
-    if(e.type==='output'){current.env=e.env;current.stdout+=e.text;}
+    if(e.type==='step'){current.env=e.step.vars;current.displayLengths.push(current.transcript.length);e.step.display_len=current.transcript.length;}
+    if(e.type==='output'){current.env=e.env;current.stdout+=e.text;current.transcript+=e.text;}
+    if(e.type==='input_echo')current.transcript+=e.text;
     current.onEvent(e);
    };
    worker.onerror=e=>{const msg=e.message||'浏览器运行线程异常';reset();settle({type:'aborted',error:{kind:'BrowserRuntimeError',line:1,traceback:msg}});};
@@ -37,7 +38,7 @@ window.BrowserClassroom=(()=>{
   await readiness;if(current)throw new Error('已有程序正在运行');
   return await new Promise(resolve=>{
    const shared=new SharedArrayBuffer(65552),control=new Int32Array(shared,0,4);
-   current={resolve,onEvent,shared,control,env:{},stdout:'',timer:null};watchdog(180000);
+   current={resolve,onEvent,shared,control,env:{},stdout:'',transcript:'',displayLengths:[],timer:null};watchdog(180000);
    getWorker().postMessage({type:'run',request:{...req,stream:true},shared});
   });
  }
