@@ -10,7 +10,7 @@ window.BrowserClassroom=(()=>{
   if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));
   if(!crossOriginIsolated){
    const last=Number(sessionStorage.getItem('classroom_isolation_reload')||0);
-   if(Date.now()-last>15000){sessionStorage.setItem('classroom_isolation_reload',Date.now().toString());location.reload();await new Promise(()=>{});}
+   if(Date.now()-last>15000){sessionStorage.setItem('classroom_isolation_reload',Date.now().toString());window.ClassroomAnalytics?.prepareReload();location.reload();await new Promise(()=>{});}
    throw new Error('浏览器尚未完成运行环境初始化，请刷新网页，或使用新版 Chrome / Edge。');
   }
   if(typeof SharedArrayBuffer==='undefined')throw new Error('浏览器未提供交互输入所需的共享内存。');

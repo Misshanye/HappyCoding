@@ -377,6 +377,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <script src="./browser-runtime.js"></script>
 <script src="./analytics-config.js"></script>
 <script src="./classroom-analytics.js"></script>
+<script>window.ClassroomAnalytics?.start();</script>
 <script>
 /* 页面一进来先留一份"原始源码"快照（还没被脚本渲染过），供一键下载原封不动的课件文件 */
 const RAW_HTML='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
@@ -1466,7 +1467,7 @@ updateModeUI();
 
 </script>
 <script>
-BrowserClassroom.ready().then(()=>{window.ClassroomAnalytics?.start();document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').hidden=false;document.getElementById('runtimeStatus').textContent=e.message;});
+BrowserClassroom.ready().then(()=>{document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').hidden=false;document.getElementById('runtimeStatus').textContent=e.message;});
 </script>
 </body>
 </html>

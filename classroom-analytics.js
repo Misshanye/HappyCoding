@@ -9,7 +9,6 @@ window.ClassroomAnalytics = (() => {
     endpoint?.protocol === 'https:' && location.protocol !== 'file:' && !disabledByBrowser;
   let started = false, pending = Promise.resolve();
   const completed = new Set();
-  const permitted = new Set(['code_run_python', 'code_run_c', 'level_use', 'case_success']);
   const allowedLevels = new Set(['L1', 'L2', 'L3', 'L4']);
   function properties(value = {}) {
     const data = {};
@@ -46,7 +45,23 @@ window.ClassroomAnalytics = (() => {
   function start() {
     if (started || !enabled) return;
     started = true;
-    send(); // One pageview after the Service Worker isolation reload has completed.
+    // Only the runtime's explicit automatic reload is suppressed; normal refreshes count.
+    let automaticReload = false;
+    try {
+      const marker = JSON.parse(sessionStorage.getItem('classroom_analytics_runtime_reload') || 'null');
+      sessionStorage.removeItem('classroom_analytics_runtime_reload');
+      automaticReload = marker?.path === location.pathname &&
+        Date.now() - marker.at >= 0 && Date.now() - marker.at < 30000;
+    } catch (_) {}
+    if (!automaticReload) send();
+  }
+  function prepareReload() {
+    if (!enabled || !started) return;
+    try {
+      sessionStorage.setItem('classroom_analytics_runtime_reload', JSON.stringify({
+        path: location.pathname, at: Date.now(),
+      }));
+    } catch (_) { /* Lack of session storage must not block runtime startup. */ }
   }
   function run(value) {
     if (!started) return;
@@ -64,5 +79,5 @@ window.ClassroomAnalytics = (() => {
     completed.add(key);
     send('case_success', data);
   }
-  return Object.freeze({ start, run, success });
+  return Object.freeze({ start, run, success, prepareReload });
 })();
