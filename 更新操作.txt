@@ -1,0 +1,11 @@
+2026-10-25 在线版更新：僵尸行走变量 zombie_steps
+
+1. 解压本更新包，将里面的文件上传至 GitHub 仓库中 index.html 所在的目录，同名文件直接覆盖并提交。不要上传压缩包本身，也不要额外套一层文件夹。
+2. vendor 和 licenses 文件夹无需重复上传。保留现有 .nojekyll 和 Pages 设置。
+3. 等待 GitHub Pages 部署完成，打开页面并使用 Ctrl+F5 刷新。草坪血条旁应出现“行走 0 / 15 步”，变量绑定说明中应出现 zombie_steps。
+4. 自由编程如显示旧代码，是浏览器保留了个人草稿；先备份需要的代码，再点击“还原代码”载入新模板。
+5. Python 写 zombie_steps = 0，然后在循环中 zombie_steps += 1；C 在 main 中先写 int zombie_steps = 0;，再在循环中 zombie_steps++;。2 步一格，15 步到达最左格。
+6. 可打开同目录 runtime-check.html，点击开始验证两种浏览器语言的实际执行、输入和步数快照。
+
+本次保留原 Umami 网站 ID，不会主动清空已有统计。
+完整包含 vendor 和 licenses；本包仅用于覆盖已经部署过的在线版。

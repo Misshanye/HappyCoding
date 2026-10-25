@@ -1,6 +1,6 @@
 """Observe numeric C bindings without adding declarations or evaluating expressions twice."""
 import re
-BOUND={'hp_pea','hp_zombie','row_pea','row_zombie','x','remain_hp','alive'}
+BOUND={'hp_pea','hp_zombie','row_pea','row_zombie','x','remain_hp', 'zombie_steps','alive'}
 TOKEN=re.compile(r'(?P<skip>\s+|//[^\n]*|/\*[\s\S]*?\*/)|(?P<literal>"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')|(?P<pp>^[ \t]*\#[^\n]*(?:\\\n[^\n]*)*)|(?P<word>[A-Za-z_]\w*)|(?P<op>\+\+|--|\+=|-=|\*=|/=|%=|<<=|>>=|&=|\|=|\^=|==|!=|<=|>=|&&|\|\||->|<<|>>)|.',re.M)
 ASSIGN={'=','+=','-=','*=','/=','%=','<<=','>>=','&=','|=','^='}
 TYPES={'int','float','double','char','short','long','unsigned','signed','_Bool'}

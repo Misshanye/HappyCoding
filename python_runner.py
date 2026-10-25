@@ -2,7 +2,7 @@
 import sys, json, io, traceback, contextlib, linecache, math
 
 FILENAME = '草坪实战.py'
-BOUND = ('hp_pea', 'hp_zombie', 'row_pea', 'row_zombie', 'x', 'remain_hp')
+BOUND = ('hp_pea', 'hp_zombie', 'row_pea', 'row_zombie', 'x', 'remain_hp', 'zombie_steps')
 
 class LimitedOutput(io.StringIO):
     on_write = None

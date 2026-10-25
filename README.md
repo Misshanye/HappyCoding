@@ -1,6 +1,6 @@
 # 编程互动课堂 · GitHub Pages 纯浏览器版
 
-版本：v1.3。代码编辑区顶部显示“纯浏览器版”。
+版本：V1.3。代码编辑区顶部显示“V1.3”。
 
 Python 由 Pyodide / CPython 执行，C 由 WebAssembly 版 Clang 22 实际编译并运行。
 无代码运行服务器，无第三方 CDN。所有解释器、编译器、标准库和图片随网站提供。
@@ -12,7 +12,7 @@ Python 由 Pyodide / CPython 执行，C 由 WebAssembly 版 Clang 22 实际编�
 3. 也可选 GitHub Actions，使用随附的 `.github/workflows/pages.yml`。
 4. 等待 Pages 发布完成，打开 Settings → Pages 中显示的 HTTPS 地址。
 5. 首次打开可能自动刷新一次，以使站内 Service Worker 添加交互输入所需的隔离响应头。
-6. 看到“纯浏览器版 · v20261022.2”后即可使用；首次运行 Python / C 时下载相应运行文件，后续由浏览器缓存。
+6. 看到“V1.3”后即可使用；首次运行 Python / C 时下载相应运行文件，后续由浏览器缓存。
 
 支持 `用户名.github.io/仓库名/` 这样的子路径，不需要修改代码中的地址。
 发布到 GitHub Pages 不需要 Python 启动脚本，不要上传 Windows 离线运行文件。
@@ -51,3 +51,26 @@ Python 由 Pyodide / CPython 执行，C 由 WebAssembly 版 Clang 22 实际编�
 
 以后更新文件时沿用同一仓库；更新 `coi-serviceworker.js` 中的缓存版本，避免使用过期运行资源。
 无需构建，GitHub Pages 可直接发布。不要删除 vendor 中的 .gz/.wasm/.zip 运行文件。
+
+匿名统计：已配置用户提供的 Umami 网站 ID 并启用，发布后需登录自己的后台验证收到数据；详见“匿名统计接入说明.md”。课堂运行资源仍为同源本地资源，启用统计后会另行请求配置的统计接收接口。
+
+## 僵尸行走变量（2026-10-25）
+
+Python 与 C 均支持 `zombie_steps`，使用前必须在代码中初始化。每增加 1 向左走半格，2 步一格，15 步到达本行最左格中央。起点按九列网格校准在第 8/9 列交界；超过 15 步时角色停在边界，变量保留实际值。负数、非整数等不合法绑定值会给出提示，不改写语言运行结果。
+
+Python 示例：
+```python
+zombie_steps = 0
+for step in range(15):
+    zombie_steps += 1
+```
+
+C 示例（写在 main 函数内）：
+```c
+int zombie_steps = 0;
+for (int step = 0; step < 15; step++) {
+    zombie_steps++;
+}
+```
+
+每次运行从行走起点重新开始；正常运行逐次显示位移，单步按执行快照回放；停止会取消尚未显示的位移。正常运行最多为前 60 次位移放慢播放，避免反复往返循环导致长时间排队。行号、血量、攻击和匿名统计继续使用原有机制。自由编程默认模板已包含示例；浏览器已有草稿会保留，可点击“还原代码”加载新模板。

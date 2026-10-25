@@ -298,7 +298,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
           </div>
         </div>
         <div class="hpwrap">
-          <span class="hpmeta">僵尸血量</span>
+          <span class="hpmeta">僵尸血量</span><span class="hpmeta" id="zombieStepText">行走 0 / 15 步</span>
           <div class="hpbar"><div class="hpfill" id="hpFill"></div><div class="hptext" id="hpText">100 / 100</div></div>
           <span class="hpmeta" id="hpColorTag">绿</span>
         </div>
@@ -331,7 +331,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
   <!-- ================= 右列：题目 + 代码区 ================= -->
   <div>
     <section class="card">
-      <h3>⌨️ 代码编辑区 <span class="tag" id="releaseVersion">V1.3</span></h3>
+      <h3>⌨️ 代码编辑区 <span class="tag" id="releaseVersion" title="已支持僵尸行走变量 zombie_steps">V1.3</span></h3>
       <div class="body">
         <div class="btnrow" style="margin:0 0 12px" role="group" aria-label="编辑器模式">
 <button id="modeQuiz" class="btn" aria-pressed="true">🧩 任务与纠错案例</button>
@@ -340,8 +340,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <span id="runtimeStatus" class="tag" hidden></span></div>
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
-<p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
-<p>赋值 hp_zombie 改变血条和存活状态；赋值 row_pea / row_zombie 移动角色。remain_hp 不会自动覆盖 hp_zombie。需要攻击时请明确写 hp_zombie = max(0, hp_zombie - x)。alive 是普通变量，必须自行定义，需要时重新计算。</p>
+<p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量；zombie_steps：僵尸累计行走步数（非负整数）。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
+<p>赋值 hp_zombie 改变血条和存活状态；赋值 row_pea / row_zombie 移动角色。remain_hp 不会自动覆盖 hp_zombie。需要攻击时请明确写 hp_zombie = max(0, hp_zombie - x)。alive 是普通变量，必须自行定义，需要时重新计算。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到达最左格；超过 15 步停在边界，变量保留实际值。每次运行从起点开始。Python 请先写 zombie_steps = 0，C 请先写 int zombie_steps = 0;。</p>
 <label for="stdinText">预填输入（可选；留空则运行时逐次输入）</label><textarea id="stdinText" rows="2" style="width:100%;box-sizing:border-box" placeholder="例如：第一行输入行号，第二行输入攻击值"></textarea>
 </details>
 <div class="code-wrap">
@@ -696,6 +696,7 @@ const C_FREE_START=`#include <stdio.h>
 int main(void) {
     int row_pea = 1;
     int row_zombie = 1;
+    int zombie_steps = 0;    // 每 2 步一格，15 步到最左格
     int hp_pea = 60;
     int hp_zombie = 0;
     int x = 0;
@@ -710,6 +711,9 @@ int main(void) {
         printf("命中！僵尸剩余血量：%d\\n", hp_zombie);
     } else {
         printf("本轮没有命中\\n");
+    }
+    for (int step = 0; step < 15; step++) {
+        zombie_steps++;
     }
     return 0;
 }
@@ -768,13 +772,15 @@ const VARDEF=[
   {k:'hp_pea',     cmt:'豌豆射手生命值（0 表示阵亡）'},
   {k:'row_pea',    cmt:'豌豆射手所在行（1 ~ 5）'},
   {k:'row_zombie', cmt:'僵尸所在行（1 ~ 5）'},
+  {k:'zombie_steps', cmt:'僵尸累计行走步数（2 步一格，15 步到达最左格）'},
   {k:'hp_zombie',  cmt:'僵尸当前生命值（0 ~ 100）'},
   {k:'x',          cmt:'本轮攻击数值'},
   {k:'remain_hp',  cmt:'剩余血量 = 最大值(0, hp_zombie - x)'}
 ];
-const S={hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60};
+const S={hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60,zombie_steps:0};
 let remainManual=false;
-const LIMIT={hp_pea:[0,100],row_pea:[1,5],row_zombie:[1,5],hp_zombie:[0,100],x:[0,200],remain_hp:[0,100]};
+const LIMIT={hp_pea:[0,100],row_pea:[1,5],row_zombie:[1,5],hp_zombie:[0,100],x:[0,200],remain_hp:[0,100],zombie_steps:[0,Number.MAX_SAFE_INTEGER]};
+const INTEGER_BINDINGS=new Set(['row_pea','row_zombie','zombie_steps']);
 const clampv=(k,v)=>Math.max(LIMIT[k][0],Math.min(LIMIT[k][1],isNaN(v)?LIMIT[k][0]:v));
 
 let progress={};
@@ -803,7 +809,7 @@ $('rgX').addEventListener('input',e=>setVar('x',+e.target.value));
 $('rgHpZ').addEventListener('input',e=>setVar('hp_zombie',+e.target.value));
 $('btnDice').addEventListener('click',dice);
 $('btnResetStage').addEventListener('click',()=>{
-  Object.assign(S,{hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60});
+  Object.assign(S,{hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60,zombie_steps:0});
   remainManual=false; syncAll();
   say('<span class="sys">⟲ 战场已还原。</span>');
 });
@@ -848,8 +854,20 @@ function placeUnits(){
   const pea=$('peaUnit'),zom=$('zomUnit');
   pea.style.left='12.5%'; pea.style.top=((S.row_pea-1)*20+0.5)+'%';
   pea.classList.toggle('die',!(S.hp_pea>0));
-  zom.style.left='77%';   zom.style.top=((S.row_zombie-1)*20-1)+'%';
+  const first=$('lawn').children[0], second=$('lawn').children[1];
+  // Fifteen half-cell strides, from the column 8/9 boundary to column 1 centre.
+  const stride=second.offsetLeft-first.offsetLeft;
+  const center=first.offsetLeft+first.offsetWidth/2+(15-Math.min(15,S.zombie_steps))*stride/2;
+  zom.style.left=(center-zom.offsetWidth/2)+'px';
+  $('zombieStepText').textContent='行走 '+S.zombie_steps+' / 15 步'+(S.zombie_steps>=15?'（已到最左格）':'');
+  zom.style.top=((S.row_zombie-1)*20-1)+'%';
   zom.classList.toggle('die',!(S.hp_zombie>0)); zom.classList.remove('hit');
+}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>placeUnits()).observe($('lawn'));
+function resetZombieWalk(){
+  S.zombie_steps=0;
+  const zom=$('zomUnit');zom.style.transition='none';placeUnits();
+  void zom.offsetWidth;zom.style.transition='';
 }
 function colorName(r){ return r<=10?'红':r<=30?'橙':r<=50?'黄':'绿'; }
 function colorCss(r){ return {红:'#d64545',橙:'#ef8a17',黄:'#d4a017',绿:'#2e9e5b'}[colorName(r)]; }
@@ -862,7 +880,7 @@ function paintHp(hp){
 }
 function clearBullets(){ document.querySelectorAll('.bullet').forEach(b=>b.remove()); }
 function envOf(){
-  return {hp_pea:S.hp_pea,alive:S.hp_pea>0,row_pea:S.row_pea,row_zombie:S.row_zombie,hp_zombie:S.hp_zombie,x:S.x,remain_hp:S.remain_hp};
+  return {hp_pea:S.hp_pea,alive:S.hp_pea>0,row_pea:S.row_pea,row_zombie:S.row_zombie,hp_zombie:S.hp_zombie,x:S.x,remain_hp:S.remain_hp,zombie_steps:S.zombie_steps};
 }
 function refreshStage(){
   clearStageOutput();
@@ -870,7 +888,7 @@ function refreshStage(){
 }
 function battleText(){
   const alive=S.hp_pea>0, same=S.row_pea===S.row_zombie;
-  return `豌豆 HP ${S.hp_pea}（${alive?'存活':'阵亡'}）· 射手第 ${S.row_pea} 行 / 僵尸第 ${S.row_zombie} 行（${same?'同行':'不同行'}）· 僵尸血 ${S.hp_zombie} · 攻击 ${S.x} · 剩余 ${S.remain_hp}`;
+  return `豌豆 HP ${S.hp_pea}（${alive?'存活':'阵亡'}）· 射手第 ${S.row_pea} 行 / 僵尸第 ${S.row_zombie} 行（${same?'同行':'不同行'}）· 行走 ${S.zombie_steps} 步 · 僵尸血 ${S.hp_zombie} · 攻击 ${S.x} · 剩余 ${S.remain_hp}`;
 }
 /* ---------- 4.3 编辑器：高亮 / 行号 / 缩进层级 ---------- */
 const RE_CODE=/(#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\bif\b|\belif\b|\belse\b|\band\b|\bor\b|\bnot\b|\bTrue\b|\bFalse\b|\bNone\b|\bpass\b)|(\bprint\b|\bint\b|\bstr\b|\bfloat\b|\babs\b|\bmax\b|\bmin\b|\bround\b)|(\b\d+(?:\.\d+)?\b)/g;
@@ -1056,7 +1074,7 @@ function fireBullet(cb){
   lawn.appendChild(b);
   requestAnimationFrame(()=>{
     b.style.transition='left .55s linear, top .55s linear';
-    b.style.left='78%'; b.style.top=((S.row_zombie-1)*20+7)+'%';
+    b.style.left=($('zomUnit').offsetLeft+$('zomUnit').offsetWidth/2)+'px'; b.style.top=((S.row_zombie-1)*20+7)+'%';
   });
   setTimeout(()=>{ b.remove(); if(cb) cb(); },570);
 }
@@ -1195,6 +1213,7 @@ const FREE_START=`# 自由编程：先初始化变量，运行后与舞台同步
 # 第 1～5 行；生命值 0～100；攻击值 x 为 0～200。
 row_pea = 1
 row_zombie = 1
+zombie_steps = 0  # 每 2 步一格，15 步到最左格
 hp_pea = 60
 hp_zombie = int(input("请输入僵尸生命值："))
 x = int(input("请输入本次攻击值："))
@@ -1205,6 +1224,9 @@ if alive and hp_zombie > 0 and row_pea == row_zombie:
     print("命中！僵尸剩余血量：", hp_zombie)
 else:
     print("本轮没有命中")
+
+for step in range(15):
+    zombie_steps += 1
 `;
 try { freeDraft=localStorage.getItem('pvz_free_'+selectedLanguage)??freeStart(); } catch(e){ freeDraft=freeStart(); }
 function displayValue(v){ return typeof v==='object'&&v!==null?JSON.stringify(v):pyStr(v); }
@@ -1230,7 +1252,7 @@ function updateModeUI(){
   $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'';
   $('modeHelp').hidden=!free;
   if(free){
-    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有同行、射手存活且僵尸实际掉血，才播放命中动画。</p></div>';
+    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有同行、射手存活且僵尸实际掉血，才播放命中动画。</p></div>';
     $('flowLegend').textContent='这是绑定说明。自由编程的实际执行顺序以代码行高亮为准。';
   }
   $('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;
@@ -1271,8 +1293,8 @@ function bindingWarnings(env){
   for(const k of Object.keys(LIMIT)){
     if(!(k in env)) continue;
     const v=env[k], [lo,hi]=LIMIT[k];
-    if(typeof v!=='number'||!Number.isFinite(v)||v<lo||v>hi||((k==='row_pea'||k==='row_zombie')&&!Number.isInteger(v)))
-      warnings.push(k+' = '+displayValue(v)+' 无法映射到战场（要求 '+lo+'～'+hi+((k==='row_pea'||k==='row_zombie')?' 的整数':' 的数值')+'），该项保留上次可显示的值');
+    if(typeof v!=='number'||!Number.isFinite(v)||v<lo||v>hi||(INTEGER_BINDINGS.has(k)&&!Number.isInteger(v)))
+      warnings.push(k+' = '+displayValue(v)+' 无法映射到战场（要求 '+lo+'～'+hi+(INTEGER_BINDINGS.has(k)?' 的整数':' 的数值')+'），该项保留上次可显示的值');
   }
   return warnings;
 }
@@ -1280,7 +1302,7 @@ function applyBound(env, animate=false){
   const old={...S};
   for(const k of Object.keys(LIMIT)){
     const v=env[k], [lo,hi]=LIMIT[k];
-    if(typeof v==='number'&&Number.isFinite(v)&&v>=lo&&v<=hi&&(!(k==='row_pea'||k==='row_zombie')||Number.isInteger(v))) S[k]=v;
+    if(typeof v==='number'&&Number.isFinite(v)&&v>=lo&&v<=hi&&(!INTEGER_BINDINGS.has(k)||Number.isInteger(v))) S[k]=v;
   }
   syncControls(); placeUnits(); paintHp(S.hp_zombie);
   // Visual effects never calculate damage or change Python variables.
@@ -1360,7 +1382,9 @@ async function executeCode(single){
   stopDemo(); const epoch=replayEpoch;
   clearMarks(); clearBullets(); clearStageOutput(); feedback.innerHTML=''; saveDraft();
   if(location.protocol==='file:'){ updateModeUI(); return; }
+  resetZombieWalk();
   const before={}, initial={...S};
+  let presentation=Promise.resolve(), pacedMoves=0;
   let latestEnv={};
   activeRunId=Date.now().toString(36)+Math.random().toString(36).slice(2);
   const interactive=!$('stdinText').value.trim();
@@ -1370,30 +1394,37 @@ async function executeCode(single){
     const result=await BrowserClassroom.run({code:editor.value,language:selectedLanguage,stdin:$('stdinText').value,interactive},event=>{
       if(event.type==='status'){$('runtimeStatus').hidden=false;$('runtimeStatus').textContent=event.text;return;}
       if(epoch!==replayEpoch)return;
-      if(event.type==='input'){
-        $('liveInputForm').hidden=false;$('inputStatus').textContent='程序正在等待键盘输入。';$('liveInput').focus();
-        applyBound(event.env,true);renderVars(event.env);
-        clearMarks();markLine(event.line,'run');
-        return;
-      }
-      if(['result','aborted','input_done','step','output'].includes(event.type))$('liveInputForm').hidden=true;
       if(event.type==='output')latestEnv=event.env;
       else if(event.type==='step')latestEnv=event.step.vars;
-      if(event.type==='input_echo'){appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');return;}
-      if(single){
-        if(event.type==='output'){
-          appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
+      presentation=presentation.then(async()=>{
+        if(epoch!==replayEpoch)return;
+        if(event.type==='input'){
+          $('liveInputForm').hidden=false;$('inputStatus').textContent='程序正在等待键盘输入。';$('liveInput').focus();
+          applyBound(event.env,true);renderVars(event.env);
+          clearMarks();markLine(event.line,'run');
+          return;
         }
-        return;
-      }
-      if(event.type==='output'){
-        applyBound(event.env,true); appendStageOutput(event.text);
-        say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
-      }else if(event.type==='step'){
-        applyBound(event.step.vars,true);renderVars(event.step.vars);
-        clearMarks();markLine(event.step.line,'run');
-      }
+        if(['result','aborted','input_done','step','output'].includes(event.type))$('liveInputForm').hidden=true;
+        if(event.type==='input_echo'){appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');return;}
+        if(single){
+          if(event.type==='output'){
+            appendStageOutput(event.text);say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
+          }
+          return;
+        }
+        if(event.type==='output'){
+          applyBound(event.env,true); appendStageOutput(event.text);
+          say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
+        }else if(event.type==='step'){
+          const oldPosition=Math.min(15,S.zombie_steps);
+          applyBound(event.step.vars,true);renderVars(event.step.vars);
+          clearMarks();markLine(event.step.line,'run');
+          // Keep fast loops visible without slowing the code execution worker.
+          if(Math.min(15,S.zombie_steps)!==oldPosition&&pacedMoves++<60)await new Promise(resolve=>setTimeout(resolve,360));
+        }
+      });
     });
+    await presentation;
     if(result.type==='aborted'){
       result.env=latestEnv;result.steps=[];result.stdout=stagePrinted;result.trace_truncated=false;
     }
@@ -1413,7 +1444,7 @@ async function executeCode(single){
       Object.assign(S,saved);
     }
     lastSteps=result.steps;
-    if(single)clearStageOutput();
+    if(single){clearStageOutput();Object.assign(S,initial);resetZombieWalk();}
     let steps=single?result.steps:[];
     if(!single){
       let last=JSON.stringify(initial);
@@ -1438,7 +1469,7 @@ async function executeCode(single){
 fireBullet=function(cb){
   const epoch=replayEpoch, lawn=$('lawn'), b=document.createElement('div');
   b.className='bullet'; b.style.left='18%'; b.style.top=((S.row_pea-1)*20+7)+'%'; lawn.appendChild(b);
-  requestAnimationFrame(()=>{if(epoch!==replayEpoch){b.remove();return;}b.style.transition='left .55s linear';b.style.left='78%';});
+  requestAnimationFrame(()=>{if(epoch!==replayEpoch){b.remove();return;}b.style.transition='left .55s linear';b.style.left=($('zomUnit').offsetLeft+$('zomUnit').offsetWidth/2)+'px';});
   setTimeout(()=>{b.remove();if(epoch===replayEpoch&&cb)cb();},570);
 };
 $('btnStop').addEventListener('click',()=>{BrowserClassroom.stop();hideLiveInput();clearBullets();fb('⏹ 已停止程序或回放。战场保留已显示的状态。','warnbar');});
