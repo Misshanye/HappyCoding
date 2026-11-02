@@ -736,13 +736,12 @@ addLoop('R4','continue 跳过本轮','continue',3,LOOP_CONTINUE,LOOP_CONTINUE_C,
 const C_FREE_START=`#include <stdio.h>
 
 int main(void) {
-    int hp_pea = 60;
-    int hp_zombie = 100;
-    int row_pea = 1;
-    int row_zombie = 1;
-    int x_pea = 30;
-    int x_zombie = 10;
-
+    int hp_pea = 60;  // 豌豆生命值
+    int hp_zombie = 100;  // 僵尸生命值
+    int row_pea = 1;  // 豌豆所在行
+    int row_zombie = 1;  // 僵尸所在行
+    int x_pea = 30;  // 豌豆攻击力
+    int x_zombie = 10;  // 僵尸攻击力
     if (hp_pea > 0 && hp_zombie > 0 && row_pea == row_zombie) {
         printf("豌豆攻击X\\n");
     }
@@ -871,13 +870,14 @@ function fullCode(code){
   if(curLevel().category==='loop'){
     const names=['hp_pea','hp_zombie','row_pea','row_zombie','x_pea','x_zombie'];
     const setup=curTask().setup;
-    if(selectedLanguage==='c')return '#include <stdio.h>\n\nint main(void) {\n'+names.map(k=>'    int '+k+' = '+setup[k]+';').join('\n')+'\n\n'+code.split('\n').map(l=>'    '+l).join('\n')+'\n    return 0;\n}\n';
-    return '# 先初始化变量，再执行循环。\n'+names.map(k=>k+' = '+setup[k]).join('\n')+'\n\n'+code;
+    const notes={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x_pea:'豌豆攻击力',x_zombie:'僵尸攻击力'};
+    if(selectedLanguage==='c')return '#include <stdio.h>\n\nint main(void) {\n'+names.map(k=>'    int '+k+' = '+setup[k]+';  // '+notes[k]).join('\n')+'\n\n'+code.split('\n').map(l=>'    '+l).join('\n')+'\n    return 0;\n}\n';
+    return '# 先初始化变量，再执行循环。\n'+names.map(k=>k+' = '+setup[k]+'  # '+notes[k]).join('\n')+'\n\n'+code;
   }
 
   const inputs={L1:['hp_pea','hp_zombie','row_pea','row_zombie'],L2:['hp_zombie','x_pea'],L3:['hp_pea','hp_zombie','row_pea','row_zombie','x_pea'],L4:['hp_zombie']}[curLevel().id];
-  const labels={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x_pea:'本次攻击值'};
-  const definitions=inputs.map(k=>`${k} = int(input("请输入${labels[k]}："))`).join('\n');
+  const labels={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x_pea:'豌豆攻击力'};
+  const definitions=inputs.map(k=>`${k} = int(input("请输入${labels[k]}："))  # ${labels[k]}`).join('\n');
   if(selectedLanguage==='c'){
     const defs=inputs.map(k=>`    int ${k} = 0;    // ${labels[k]}\n    printf("请输入${labels[k]}：");\n    scanf("%d", &${k});`).join('\n');
     return '#include <stdio.h>\n\nint main(void) {\n'+defs+'\n\n'+code.split('\n').map(l=>'    '+l).join('\n')+'\n    return 0;\n}\n';
@@ -1261,13 +1261,12 @@ let ideMode='quiz', busy=false, replayEpoch=0;
 const quizDrafts={};
 let freeDraft, freeState=null;
 const FREE_START=`# 修改生命值、行号或攻击力，观察判断结果。
-hp_pea = 60
-hp_zombie = 100
-row_pea = 1
-row_zombie = 1
-x_pea = 30
-x_zombie = 10
-
+hp_pea = 60  # 豌豆生命值
+hp_zombie = 100  # 僵尸生命值
+row_pea = 1  # 豌豆所在行
+row_zombie = 1  # 僵尸所在行
+x_pea = 30  # 豌豆攻击力
+x_zombie = 10  # 僵尸攻击力
 if hp_pea > 0 and hp_zombie > 0 and row_pea == row_zombie:
     print("豌豆攻击X")
 
