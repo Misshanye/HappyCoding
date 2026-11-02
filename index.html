@@ -308,7 +308,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
           <div class="ctl mini"><label>🌱 豌豆行</label><input type="number" id="rgRowPea" min="1" max="5" step="1" value="3"></div>
           <div class="ctl mini"><label>🧟 僵尸行</label><input type="number" id="rgRowZom" min="1" max="5" step="1" value="3"></div>
           <div class="ctl mini"><label>💚 豌豆血</label><input type="number" id="rgHpPea" min="0" max="100" step="1" value="60"></div>
-          <div class="ctl mini"><label>💥 攻击值 x</label><input type="number" id="rgX" min="0" max="200" step="1" value="30"></div>
+          <div class="ctl mini"><label>💥 豌豆攻击力 x_pea</label><input type="number" id="rgX" min="0" max="200" step="1" value="30"></div>
+          <div class="ctl mini"><label>💥 僵尸攻击力 x_zombie</label><input type="number" id="rgXZom" min="0" max="200" step="1" value="10"></div>
           <div class="ctl mini"><label>🩸 僵尸血量</label><input type="number" id="rgHpZ" min="0" max="100" step="1" value="60"></div>
         </div>
         <div class="btnrow">
@@ -331,7 +332,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
   <!-- ================= 右列：题目 + 代码区 ================= -->
   <div>
     <section class="card">
-      <h3>⌨️ 代码编辑区 <span class="tag" id="releaseVersion" title="已支持僵尸行走变量 zombie_steps">V1.3</span></h3>
+      <h3>⌨️ 代码编辑区 <span class="tag" id="releaseVersion" title="2026-11-02：双方攻击指令与双攻击力">V1.3</span></h3>
       <div class="body">
         <div class="btnrow" style="margin:0 0 12px" role="group" aria-label="编辑器模式">
 <button id="modeQuiz" class="btn" aria-pressed="true">🧩 任务与纠错案例</button>
@@ -340,8 +341,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <span id="runtimeStatus" class="tag" hidden></span></div>
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
-<p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量；zombie_steps：僵尸累计行走步数（非负整数）。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
-<p>赋值 hp_zombie 改变血条和存活状态；赋值 row_pea / row_zombie 移动角色。remain_hp 不会自动覆盖 hp_zombie。只有执行 print("豌豆攻击") 才发动一次攻击并按 x 自动扣血（最低为 0），无需再写扣血赋值；C 使用 printf("豌豆攻击\n")。仅满足条件不会攻击。alive 是普通变量，必须自行定义，需要时重新计算。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到达最左格；超过 15 步停在边界，变量保留实际值。每次运行从起点开始。Python 请先写 zombie_steps = 0，C 请先写 int zombie_steps = 0;。</p>
+<p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x_pea / x_zombie：0～200；remain_hp：独立计算变量；zombie_steps：僵尸累计行走步数（非负整数）。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
+<p>攻击力分别为 x_pea（豌豆）和 x_zombie（僵尸），均为 0～200。支持 print("豌豆攻击X")、print(f"豌豆攻击{x_pea}")，以及对应的僵尸写法；也兼容不带后缀的“豌豆攻击”“僵尸攻击”。实际伤害读取对应攻击力变量，输出的数字仅为展示。只有执行攻击输出指令且攻击条件满足，才播放命中动画并自动扣血，最低为 0；无需再写扣血赋值。豌豆攻击条件：双方存活且同一行；僵尸攻击条件与豌豆相同：双方存活且同一行。没有攻击指令、条件不满足、打印其他文字或仅计算 remain_hp 均不会造成攻击伤害。显式给 hp_pea / hp_zombie 赋值仍会直接同步血量。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到最左格；每次运行从起点开始。使用变量前必须先声明或初始化，战场控件不会隐式定义程序变量。C 使用 printf("豌豆攻击X\n"); 或 printf("豌豆攻击%d\n", x_pea);，僵尸同理。</p>
 <label for="stdinText">预填输入（可选；留空则运行时逐次输入）</label><textarea id="stdinText" rows="2" style="width:100%;box-sizing:border-box" placeholder="例如：第一行输入行号，第二行输入攻击值"></textarea>
 </details>
 <div class="code-wrap">
@@ -374,7 +375,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 </div>
 <p class="foot">编程互动课堂 · 纯浏览器版 ｜ Python / C 真实执行 · 无需安装 · 无需运行服务器</p>
 </div>
-<script src="./browser-runtime.js?v=20261102-attack"></script>
+<script src="./browser-runtime.js?v=20261102-dual-simple"></script>
 <script src="./analytics-config.js"></script>
 <script src="./classroom-analytics.js"></script>
 <script>window.ClassroomAnalytics?.start();</script>
@@ -463,7 +464,7 @@ function flow1(){
 function flow2(){
   let s=fStart(300,28,'n-start','开始');
   s+=fLine('M300,50 L300,72','e1');
-  s+=fBox(160,76,280,42,'n-p0','remain_hp = hp_zombie - x');
+  s+=fBox(160,76,280,42,'n-p0','remain_hp = hp_zombie - x_pea');
   s+=fLine('M300,118 L300,148','e2');
   s+=fDia(300,182,300,64,'n-d1',['remain_hp < 0 ？']);
   s+=fLine('M300,214 L300,242 L155,242 L155,272','e-d1-y'); s+=fLab(208,234,'是','l-y');
@@ -483,7 +484,7 @@ function flow3(){
   s+=fLine('M300,148 L300,178','e-d1-y'); s+=fLab(316,166,'是','l-y');
   s+=fBox(150,182,300,40,'n-p1','满足条件：进入攻击结算');
   s+=fLine('M300,222 L300,246','e2');
-  s+=fBox(170,250,260,40,'n-p2','remain_hp = hp_zombie - x');
+  s+=fBox(170,250,260,40,'n-p2','remain_hp = hp_zombie - x_pea');
   s+=fLine('M300,290 L300,321','e3');
   s+=fDia(300,354,300,62,'n-d2',['remain_hp <= 0 ？（内层）','']);
   s+=fLine('M300,385 L300,406 L192,406 L192,432','e-d2-y'); s+=fLab(240,398,'是','l-y2');
@@ -535,9 +536,9 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 /* One fixed learning task per level; cases are examples of mistakes in that task. */
 const LEVELS=[];
 const ATTACK='hp_pea > 0 and hp_zombie > 0 and row_pea == row_zombie';
-const SAME={hp_pea:60,hp_zombie:100,row_pea:3,row_zombie:3,x:30};
+const SAME={hp_pea:60,hp_zombie:100,row_pea:3,row_zombie:3,x_pea:30};
 const canAttack=s=>s.hp_pea>0&&s.hp_zombie>0&&s.row_pea===s.row_zombie;
-const afterHit=s=>Math.max(0,s.hp_zombie-s.x);
+const afterHit=s=>Math.max(0,s.hp_zombie-s.x_pea);
 function errorCase(id,name,desc,code,answer,hint,setup={}){
   return {id,name,desc,code,answer,hint,setup:{...SAME,...setup}};
 }
@@ -545,7 +546,7 @@ const A1=`if ${ATTACK}:
     print("符合基础攻击条件")`;
 LEVELS.push({id:'L1',chip:'第 1 关',title:'单分支 if',flowKind:'flow1',require:['hp_pea','hp_zombie','row_pea','row_zombie'],
   mission:'输入豌豆生命值 hp_pea、豌豆行号 row_pea、僵尸行号 row_zombie；僵尸生命值使用战场变量 hp_zombie。只有豌豆和僵尸同时存活，并且两者在同一行，才打印“符合基础攻击条件”。',
-  rule:'存活表示生命值大于 0；条件不成立时不输出。使用 if 单分支完成判断。',
+  rule:'存活表示生命值大于 0；条件不成立时不输出。使用 if 单分支完成判断。本关只判断条件；输出“符合基础攻击条件”不会发动攻击。',
   expect(s){return {must:canAttack(s)?['符合基础攻击条件']:[],ban:canAttack(s)?[]:['符合基础攻击条件'],count:canAttack(s)?1:0};},
   expectText(s){return canAttack(s)?'符合基础攻击条件':'不输出（双方未同时存活或不在同一行）';},
   tasks:[
@@ -557,33 +558,33 @@ LEVELS.push({id:'L1',chip:'第 1 关',title:'单分支 if',flowKind:'flow1',requ
     errorCase('L1-C6','漏判射手存活','射手生命值为 0，却仍然输出可攻击。',A1.replace('hp_pea > 0 and ',''),A1,'射手与僵尸都必须存活。',{hp_pea:0}),
     errorCase('L1-C7','变量名拼错','行号变量名称前后不一致。',A1.replace('row_zombie','row_zmbie'),A1,'统一使用 row_zombie。')
   ]});
-const A2=`remain_hp = hp_zombie - x
+const A2=`remain_hp = hp_zombie - x_pea
 if remain_hp < 0:
     print(0)
 else:
     print(remain_hp)`;
-LEVELS.push({id:'L2',chip:'第 2 关',title:'双分支 if-else',flowKind:'flow2',require:['hp_zombie','x','remain_hp'],
-  mission:'僵尸生命值为 hp_zombie，输入一次攻击数值 x，计算当前攻击后僵尸的生命值并打印。僵尸生命值最低为 0。',
+LEVELS.push({id:'L2',chip:'第 2 关',title:'双分支 if-else',flowKind:'flow2',require:['hp_zombie','x_pea','remain_hp'],
+  mission:'僵尸生命值为 hp_zombie，输入假设的豌豆攻击力 x_pea，预测一次攻击后僵尸的生命值并打印。僵尸生命值最低为 0。',
   rule:'本关只练习一次伤害结算，不判断角色行号或射手存活。使用 if-else 处理负血量。',
   expect(s){return {must:[String(afterHit(s))],ban:[],count:1};},
-  expectText(s){return String(afterHit(s))+'（max(0, hp_zombie − x)）';},
+  expectText(s){return String(afterHit(s))+'（max(0, hp_zombie − x_pea)）';},
   tasks:[
     errorCase('L2-C1','else 后多写条件','else 表示其他所有情况，不能直接附加判断条件。',A2.replace('else:','else remain_hp >= 0:'),A2,'else 后直接写冒号。'),
     errorCase('L2-C2','判断方向写反','正血量被输出为 0。',A2.replace('remain_hp < 0','remain_hp > 0'),A2,'只有计算结果小于 0 时才需要归零。'),
     errorCase('L2-C3','print 缺少缩进','分支体没有缩进。',A2.replaceAll('    print','print'),A2,'两条分支内的 print 都要缩进一级。'),
-    errorCase('L2-C4','if 漏写冒号','攻击超过当前生命值时，先排除语法错误。',A2.replace('if remain_hp < 0:','if remain_hp < 0'),A2,'补上 if 行末尾的冒号。',{x:130}),
-    errorCase('L2-C5','伤害算成加法','攻击后生命值反而增加。',A2.replace('hp_zombie - x','hp_zombie + x'),A2,'攻击后的生命值应使用减法计算。'),
-    errorCase('L2-C6','忘记最低血量限制','攻击超过原生命值时输出了负数。','remain_hp = hp_zombie - x\nprint(remain_hp)',A2,'补上 if-else，负血量应输出 0。',{x:130})
+    errorCase('L2-C4','if 漏写冒号','攻击超过当前生命值时，先排除语法错误。',A2.replace('if remain_hp < 0:','if remain_hp < 0'),A2,'补上 if 行末尾的冒号。',{x_pea:130}),
+    errorCase('L2-C5','伤害算成加法','攻击后生命值反而增加。',A2.replace('hp_zombie - x_pea','hp_zombie + x_pea'),A2,'攻击后的生命值应使用减法计算。'),
+    errorCase('L2-C6','忘记最低血量限制','攻击超过原生命值时输出了负数。','remain_hp = hp_zombie - x_pea\nprint(remain_hp)',A2,'补上 if-else，负血量应输出 0。',{x_pea:130})
   ]});
 const A3=`if ${ATTACK}:
-    remain_hp = hp_zombie - x
+    remain_hp = hp_zombie - x_pea
     if remain_hp <= 0:
         print(0)
     else:
         print(remain_hp)`;
-LEVELS.push({id:'L3',chip:'第 3 关',title:'分支嵌套',flowKind:'flow3',require:['hp_pea','hp_zombie','row_pea','row_zombie','x','remain_hp'],
-  mission:'在符合基础攻击条件的情况下，判断僵尸受到一次攻击 x 后是否存活，并打印僵尸的生命值。僵尸生命值最低为 0。',
-  rule:'外层：双方同时存活且同行。内层：攻击后血量 > 0 为存活；≤ 0 为死亡，输出 0。不符合基础攻击条件时不攻击、不输出。',
+LEVELS.push({id:'L3',chip:'第 3 关',title:'分支嵌套',flowKind:'flow3',require:['hp_pea','hp_zombie','row_pea','row_zombie','x_pea','remain_hp'],
+  mission:'在符合基础攻击条件的情况下，预测僵尸受到一次攻击 x_pea 后是否存活，并打印僵尸的生命值。僵尸生命值最低为 0。',
+  rule:'外层：双方同时存活且同行。内层：攻击后血量 > 0 为存活；≤ 0 为死亡，输出 0。不符合基础攻击条件时不输出。本关只预测血量；实际攻击需执行攻击输出指令。',
   expect(s){return {must:canAttack(s)?[String(afterHit(s))]:[],ban:[],count:canAttack(s)?1:0};},
   expectText(s){return canAttack(s)?String(afterHit(s))+'（攻击后'+(afterHit(s)>0?'存活':'死亡')+'）':'不输出（不符合基础攻击条件）';},
   tasks:[
@@ -593,7 +594,7 @@ LEVELS.push({id:'L3',chip:'第 3 关',title:'分支嵌套',flowKind:'flow3',requ
     errorCase('L3-C4','外层使用 or','不同行却仍进入内层攻击结算。',A3.replaceAll(' and ',' or '),A3,'外层三个条件必须同时成立。',{row_pea:2,row_zombie:4}),
     errorCase('L3-C5','漏判僵尸存活','已经阵亡的僵尸仍进入攻击分支。',A3.replace('hp_zombie > 0 and ',''),A3,'基础攻击条件也包含僵尸存活。',{hp_zombie:0}),
     errorCase('L3-C6','内层 print 少缩进','内层 if 后面没有缩进的代码块。',A3.replace('        print(0)','    print(0)'),A3,'内层分支体需要比内层 if 再缩进一级。'),
-    errorCase('L3-C7','死亡后打印负血量','攻击超过生命值时输出了负数。',A3.replace('print(0)','print(remain_hp)'),A3,'死亡时输出 0，不输出负数。',{x:130})
+    errorCase('L3-C7','死亡后打印负血量','攻击超过生命值时输出了负数。',A3.replace('print(0)','print(remain_hp)'),A3,'死亡时输出 0，不输出负数。',{x_pea:130})
   ]});
 const A4=`if hp_zombie <= 10:
     color = "红"
@@ -606,7 +607,7 @@ else:
 print("血条颜色：" + color)`;
 LEVELS.push({id:'L4',chip:'第 4 关',title:'多分支 if-elif-else',flowKind:'flow4',require:['hp_zombie'],
   mission:'根据僵尸当前生命值 hp_zombie 判断血条颜色，并打印对应颜色。',
-  rule:'0 ≤ hp_zombie ≤ 10 → 红；10 < hp_zombie ≤ 30 → 橙；30 < hp_zombie ≤ 50 → 黄；50 < hp_zombie ≤ 100 → 绿。本关直接判断当前血量，不再减去攻击值 x。',
+  rule:'0 ≤ hp_zombie ≤ 10 → 红；10 < hp_zombie ≤ 30 → 橙；30 < hp_zombie ≤ 50 → 黄；50 < hp_zombie ≤ 100 → 绿。本关直接判断当前血量，不再减去攻击值 x_pea。',
   expect(s){return {must:[colorName(s.hp_zombie)],ban:['红','橙','黄','绿'].filter(c=>c!==colorName(s.hp_zombie)),count:1};},
   expectText(s){return '血条颜色：'+colorName(s.hp_zombie);},
   tasks:[
@@ -625,14 +626,14 @@ const C_ATTACK='hp_pea > 0 && hp_zombie > 0 && row_pea == row_zombie';
 const C_A1=`if (${C_ATTACK}) {
     printf("符合基础攻击条件\\n");
 }`;
-const C_A2=`int remain_hp = hp_zombie - x;
+const C_A2=`int remain_hp = hp_zombie - x_pea;
 if (remain_hp < 0) {
     printf("%d\\n", 0);
 } else {
     printf("%d\\n", remain_hp);
 }`;
 const C_A3=`if (${C_ATTACK}) {
-    int remain_hp = hp_zombie - x;
+    int remain_hp = hp_zombie - x_pea;
     if (remain_hp <= 0) {
         printf("%d\\n", 0);
     } else {
@@ -665,8 +666,8 @@ const C_CASES=[
   C_A2.replace('remain_hp < 0','remain_hp > 0'),
   C_A2.replace('} else {','else {'),
   C_A2.replace('if (remain_hp < 0) {','if remain_hp < 0 {'),
-  C_A2.replace('hp_zombie - x','hp_zombie + x'),
-  'int remain_hp = hp_zombie - x;\nprintf("%d\\n", remain_hp);'
+  C_A2.replace('hp_zombie - x_pea','hp_zombie + x_pea'),
+  'int remain_hp = hp_zombie - x_pea;\nprintf("%d\\n", remain_hp);'
  ],
  [
   C_A3.replace('    } else {\n        printf("%d\\n", remain_hp);\n    }','    }\n} else {\n    printf("%d\\n", remain_hp);'),
@@ -694,25 +695,18 @@ LEVELS.forEach((lv,i)=>lv.tasks.forEach((t,j)=>{
 const C_FREE_START=`#include <stdio.h>
 
 int main(void) {
+    int hp_pea = 60;
+    int hp_zombie = 100;
     int row_pea = 1;
     int row_zombie = 1;
-    int zombie_steps = 0;    // 每 2 步一格，15 步到最左格
-    int hp_pea = 60;
-    int hp_zombie = 0;
-    int x = 0;
-    printf("请输入僵尸生命值：");
-    scanf("%d", &hp_zombie);
-    printf("请输入本次攻击值：");
-    scanf("%d", &x);
+    int x_pea = 30;
+    int x_zombie = 10;
 
     if (hp_pea > 0 && hp_zombie > 0 && row_pea == row_zombie) {
-        printf("豌豆攻击\\n");
-        printf("命中！僵尸剩余血量：%d\\n", hp_zombie);
-    } else {
-        printf("本轮没有命中\\n");
+        printf("豌豆攻击X\\n");
     }
-    for (int step = 0; step < 15; step++) {
-        zombie_steps++;
+    if (hp_pea > 0 && hp_zombie > 0 && row_pea == row_zombie) {
+        printf("僵尸攻击%d\\n", x_zombie);
     }
     return 0;
 }
@@ -773,12 +767,13 @@ const VARDEF=[
   {k:'row_zombie', cmt:'僵尸所在行（1 ~ 5）'},
   {k:'zombie_steps', cmt:'僵尸累计行走步数（2 步一格，15 步到达最左格）'},
   {k:'hp_zombie',  cmt:'僵尸当前生命值（0 ~ 100）'},
-  {k:'x',          cmt:'本轮攻击数值'},
-  {k:'remain_hp',  cmt:'剩余血量 = 最大值(0, hp_zombie - x)'}
+  {k:'x_pea',      cmt:'豌豆每次有效攻击的伤害'},
+  {k:'x_zombie',   cmt:'僵尸每次有效攻击的伤害'},
+  {k:'remain_hp',  cmt:'剩余血量 = 最大值(0, hp_zombie - x_pea)'}
 ];
-const S={hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60,zombie_steps:0};
+const S={hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x_pea:30,x_zombie:10,remain_hp:60,zombie_steps:0};
 let remainManual=false;
-const LIMIT={hp_pea:[0,100],row_pea:[1,5],row_zombie:[1,5],hp_zombie:[0,100],x:[0,200],remain_hp:[0,100],zombie_steps:[0,Number.MAX_SAFE_INTEGER]};
+const LIMIT={hp_pea:[0,100],row_pea:[1,5],row_zombie:[1,5],hp_zombie:[0,100],x_pea:[0,200],x_zombie:[0,200],remain_hp:[0,100],zombie_steps:[0,Number.MAX_SAFE_INTEGER]};
 const INTEGER_BINDINGS=new Set(['row_pea','row_zombie','zombie_steps']);
 const clampv=(k,v)=>Math.max(LIMIT[k][0],Math.min(LIMIT[k][1],isNaN(v)?LIMIT[k][0]:v));
 
@@ -804,11 +799,12 @@ function curTask(){
 $('rgRowPea').addEventListener('input',e=>setVar('row_pea',+e.target.value));
 $('rgRowZom').addEventListener('input',e=>setVar('row_zombie',+e.target.value));
 $('rgHpPea').addEventListener('input',e=>setVar('hp_pea',+e.target.value));
-$('rgX').addEventListener('input',e=>setVar('x',+e.target.value));
+$('rgX').addEventListener('input',e=>setVar('x_pea',+e.target.value));
+$('rgXZom').addEventListener('input',e=>setVar('x_zombie',+e.target.value));
 $('rgHpZ').addEventListener('input',e=>setVar('hp_zombie',+e.target.value));
 $('btnDice').addEventListener('click',dice);
 $('btnResetStage').addEventListener('click',()=>{
-  Object.assign(S,{hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x:30,remain_hp:60,zombie_steps:0});
+  Object.assign(S,{hp_pea:60,row_pea:3,row_zombie:3,hp_zombie:60,x_pea:30,x_zombie:10,remain_hp:60,zombie_steps:0});
   remainManual=false; syncAll();
   say('<span class="sys">⟲ 战场已还原。</span>');
 });
@@ -817,22 +813,22 @@ function dice(){
   S.hp_pea=pickFrom([0,20,40,60,80,100]);
   S.row_pea=1+Math.floor(Math.random()*5);
   S.row_zombie=Math.random()<0.62?S.row_pea:1+Math.floor(Math.random()*5);
-  S.x=pickFrom([0,10,25,30,45,60,65,70,80,90,95,100,110,130,150]);
-  remainManual=false; S.remain_hp=Math.max(0,S.hp_zombie-S.x);
+  S.x_pea=pickFrom([0,10,25,30,45,60,65,70,80,90,95,100,110,130,150]);
+  remainManual=false; S.remain_hp=Math.max(0,S.hp_zombie-S.x_pea);
   syncAll();
   say('<span class="sys">🎲 随机战况已生成 —— 你的代码还能不能扛住？按 ▶ 运行试试。</span>');
 }
 /* 修改变量 → 控件、舞台、题目目标同步 */
 function setVar(k,v){
   S[k]=clampv(k,v);
-  if(ideMode==='quiz'&&(k==='x'||k==='hp_zombie')&&!remainManual) S.remain_hp=clampv('remain_hp',Math.max(0,S.hp_zombie-S.x));
+  if(ideMode==='quiz'&&(k==='x_pea'||k==='hp_zombie')&&!remainManual) S.remain_hp=clampv('remain_hp',Math.max(0,S.hp_zombie-S.x_pea));
   syncAll();
 }
 function syncAll(){ syncControls(); refreshStage(); if(ideMode==='quiz') renderTask(); renderVars({}); }
 /* Every provided case is a complete, visible Python program. */
 function fullCode(code){
-  const inputs={L1:['hp_pea','hp_zombie','row_pea','row_zombie'],L2:['hp_zombie','x'],L3:['hp_pea','hp_zombie','row_pea','row_zombie','x'],L4:['hp_zombie']}[curLevel().id];
-  const labels={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x:'本次攻击值'};
+  const inputs={L1:['hp_pea','hp_zombie','row_pea','row_zombie'],L2:['hp_zombie','x_pea'],L3:['hp_pea','hp_zombie','row_pea','row_zombie','x_pea'],L4:['hp_zombie']}[curLevel().id];
+  const labels={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x_pea:'本次攻击值'};
   const definitions=inputs.map(k=>`${k} = int(input("请输入${labels[k]}："))`).join('\n');
   if(selectedLanguage==='c'){
     const defs=inputs.map(k=>`    int ${k} = 0;    // ${labels[k]}\n    printf("请输入${labels[k]}：");\n    scanf("%d", &${k});`).join('\n');
@@ -843,7 +839,8 @@ function fullCode(code){
 function codeOnly(){return editor.value;}
 function syncControls(){
   $('rgHpPea').value=S.hp_pea;
-  $('rgX').value=S.x;
+  $('rgX').value=S.x_pea;
+  $('rgXZom').value=S.x_zombie;
   $('rgRowPea').value=S.row_pea;
   $('rgRowZom').value=S.row_zombie;
   $('rgHpZ').value=S.hp_zombie;
@@ -879,7 +876,7 @@ function paintHp(hp){
 }
 function clearBullets(){ document.querySelectorAll('.bullet').forEach(b=>b.remove()); }
 function envOf(){
-  return {hp_pea:S.hp_pea,alive:S.hp_pea>0,row_pea:S.row_pea,row_zombie:S.row_zombie,hp_zombie:S.hp_zombie,x:S.x,remain_hp:S.remain_hp,zombie_steps:S.zombie_steps};
+  return {hp_pea:S.hp_pea,alive:S.hp_pea>0,row_pea:S.row_pea,row_zombie:S.row_zombie,hp_zombie:S.hp_zombie,x_pea:S.x_pea,remain_hp:S.remain_hp,zombie_steps:S.zombie_steps};
 }
 function refreshStage(){
   clearStageOutput();
@@ -887,7 +884,7 @@ function refreshStage(){
 }
 function battleText(){
   const alive=S.hp_pea>0, same=S.row_pea===S.row_zombie;
-  return `豌豆 HP ${S.hp_pea}（${alive?'存活':'阵亡'}）· 射手第 ${S.row_pea} 行 / 僵尸第 ${S.row_zombie} 行（${same?'同行':'不同行'}）· 行走 ${S.zombie_steps} 步 · 僵尸血 ${S.hp_zombie} · 攻击 ${S.x} · 剩余 ${S.remain_hp}`;
+  return `豌豆 HP ${S.hp_pea}（${alive?'存活':'阵亡'}）· 射手第 ${S.row_pea} 行 / 僵尸第 ${S.row_zombie} 行（${same?'同行':'不同行'}）· 行走 ${S.zombie_steps} 步 · 僵尸血 ${S.hp_zombie} · 攻击 ${S.x_pea} · 剩余 ${S.remain_hp}`;
 }
 /* ---------- 4.3 编辑器：高亮 / 行号 / 缩进层级 ---------- */
 const RE_CODE=/(#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\bif\b|\belif\b|\belse\b|\band\b|\bor\b|\bnot\b|\bTrue\b|\bFalse\b|\bNone\b|\bpass\b)|(\bprint\b|\bint\b|\bstr\b|\bfloat\b|\babs\b|\bmax\b|\bmin\b|\bround\b)|(\b\d+(?:\.\d+)?\b)/g;
@@ -1096,7 +1093,7 @@ function paintFlow(SorNull){
     else { A(['e-d1-n','n-end']); D(['e-d1-y','n-p1','e-p1']); }
     $('flowLegend').innerHTML='本次路径：'+(yes?'<b>条件成立 → 打印条件判断结果（不发动攻击）</b>':'<b>条件不成立 → 整段被跳过（一个字都不输出）</b>');
   } else if(lv.flowKind==='flow2'){
-    const neg=(S.hp_zombie-S.x)<0;
+    const neg=(S.hp_zombie-S.x_pea)<0;
     A(['n-start','e1','n-p0','e2','n-d1']);
     if(neg){ A(['e-d1-y','n-p1','e3','n-end']); D(['e-d1-n','n-p2','e4']); }
     else { A(['e-d1-n','n-p2','e4','n-end']); D(['e-d1-y','n-p1','e3']); }
@@ -1109,14 +1106,14 @@ function paintFlow(SorNull){
       D(['e-d1-y','n-p1','e2','n-p2','e3','n-d2','e-d2-y','n-p3','e-d2-n','n-p4','e4','e5']);
       $('flowLegend').innerHTML='本次路径：<b>外层不成立 → 直接走 else，内层根本没机会执行</b>';
     } else {
-      const neg=(S.hp_zombie-S.x)<0;
+      const neg=(S.hp_zombie-S.x_pea)<0;
       A(['e-d1-y','n-p1','e2','n-p2','e3','n-d2']); D(['e-d1-n','n-else','e-else']);
       if(neg){ A(['e-d2-y','n-p3','e4','n-end']); D(['e-d2-n','n-p4','e5']); }
       else { A(['e-d2-n','n-p4','e5','n-end']); D(['e-d2-y','n-p3','e4']); }
       $('flowLegend').innerHTML='本次路径：外层成立 → 进入内层 → <b>'+(neg?'血量小于 0 → 输出 0':'输出剩余血量')+'</b>';
     }
   } else if(lv.flowKind==='flow4'){
-    const remain=Math.max(0,S.hp_zombie-S.x);
+    const remain=Math.max(0,S.hp_zombie-S.x_pea);
     const idx=remain<=10?0:remain<=30?1:remain<=50?2:3;
     const boxes=['n-r1','n-r2','n-r3'], yesE=['e-d1-y','e-d2-y','e-d3-y'], bus=['e-b1','e-b2','e-b3'];
     A(['n-start','e1','n-d1']);
@@ -1156,8 +1153,8 @@ function loadTask(t,keepData){
   const setup=selectedLanguage==='c'?(t.setup_c||t.setup):t.setup;
   if(setup&&!keepData){
     Object.keys(setup).forEach(k=>{ S[k]=clampv(k,setup[k]); });
-    remainManual=(setup.remain_hp!==undefined)&&(setup.remain_hp!==Math.max(0,S.hp_zombie-S.x));
-    if(!remainManual) S.remain_hp=clampv('remain_hp',Math.max(0,S.hp_zombie-S.x));
+    remainManual=(setup.remain_hp!==undefined)&&(setup.remain_hp!==Math.max(0,S.hp_zombie-S.x_pea));
+    if(!remainManual) S.remain_hp=clampv('remain_hp',Math.max(0,S.hp_zombie-S.x_pea));
   }
   editor.value=userCode[t.id]??fullCode(taskSource(t)); editor.scrollTop=0; fitStack();
   const flows={indent:flow0,flow1:flow1,flow2:flow2,flow3:flow3,flow4:flow4};
@@ -1197,24 +1194,19 @@ function nextTask(){
 let ideMode='quiz', busy=false, replayEpoch=0;
 const quizDrafts={};
 let freeDraft, freeState=null;
-const FREE_START=`# 自由编程：先初始化变量，运行后与舞台同步。可自行改写。
-# 第 1～5 行；生命值 0～100；攻击值 x 为 0～200。
+const FREE_START=`# 修改生命值、行号或攻击力，观察判断结果。
+hp_pea = 60
+hp_zombie = 100
 row_pea = 1
 row_zombie = 1
-zombie_steps = 0  # 每 2 步一格，15 步到最左格
-hp_pea = 60
-hp_zombie = int(input("请输入僵尸生命值："))
-x = int(input("请输入本次攻击值："))
-alive = hp_pea > 0
+x_pea = 30
+x_zombie = 10
 
-if alive and hp_zombie > 0 and row_pea == row_zombie:
-    print("豌豆攻击")
-    print("命中！僵尸剩余血量：", hp_zombie)
-else:
-    print("本轮没有命中")
+if hp_pea > 0 and hp_zombie > 0 and row_pea == row_zombie:
+    print("豌豆攻击X")
 
-for step in range(15):
-    zombie_steps += 1
+if hp_pea > 0 and hp_zombie > 0 and row_pea == row_zombie:
+    print(f"僵尸攻击{x_zombie}")
 `;
 try { freeDraft=localStorage.getItem('pvz_free_'+selectedLanguage)??freeStart(); } catch(e){ freeDraft=freeStart(); }
 function displayValue(v){ return typeof v==='object'&&v!==null?JSON.stringify(v):pyStr(v); }
@@ -1240,7 +1232,7 @@ function updateModeUI(){
   $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'';
   $('modeHelp').hidden=!free;
   if(free){
-    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有实际输出“豌豆攻击”才发动攻击、播放动画并按 x 自动扣血；不额外检查存活或同行条件，由代码中的条件判断决定。</p></div>';
+    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x_pea / x_zombie → 双方攻击力；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。执行攻击指令且双方存活、同行时，豌豆按 x_pea 扣血；僵尸还需走满 15 步到最左格，按 x_zombie 扣血。X 字母和数值输出均支持。</p></div>';
     $('flowLegend').textContent='这是绑定说明。自由编程的实际执行顺序以代码行高亮为准。';
   }
   $('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;
@@ -1286,9 +1278,22 @@ function bindingWarnings(env){
   }
   return warnings;
 }
-let shownAttackCount=0;
-function showAttacks(count=0){
-  while(shownAttackCount<count){shownAttackCount++;fireBullet();$('zomUnit').classList.add('hit');}
+let shownAttacks={pea:0,zombie:0};
+function showAttacks(counts){
+  if(!counts)return false;
+  let changed=false;
+  for(const actor of ['pea','zombie']){
+    while(shownAttacks[actor]<(counts[actor]||0)){
+      shownAttacks[actor]++;changed=true;
+      if(actor==='pea')fireBullet(()=>{const target=$('zomUnit');target.classList.remove('hit');void target.offsetWidth;target.classList.add('hit');});else zombieStrike();
+    }
+  }
+  return changed;
+}
+function zombieStrike(){
+  const unit=$('zomUnit'),target=$('peaUnit');
+  unit.animate([{transform:'translateX(0)'},{transform:'translateX(-18px)'},{transform:'translateX(0)'}],{duration:380});
+  target.classList.remove('hit');void target.offsetWidth;target.classList.add('hit');
 }
 function applyBound(env, animate=false){
   const old={...S};
@@ -1368,7 +1373,7 @@ function showResult(result,before,judgeResult){
 async function executeCode(single){
   if(busy)return;
   stopDemo(); const epoch=replayEpoch;
-  clearMarks(); clearBullets(); clearStageOutput(); shownAttackCount=0; feedback.innerHTML=''; saveDraft();
+  clearMarks(); clearBullets(); clearStageOutput(); shownAttacks={pea:0,zombie:0}; feedback.innerHTML=''; saveDraft();
   if(location.protocol==='file:'){ updateModeUI(); return; }
   resetZombieWalk();
   const before={}, initial={...S};
@@ -1401,11 +1406,11 @@ async function executeCode(single){
           return;
         }
         if(event.type==='output'){
-          applyBound(event.env,true); showAttacks(event.attack_count); appendStageOutput(event.text);
+          applyBound(event.env,true); if(showAttacks(event.attack_counts)&&pacedMoves++<60)await new Promise(resolve=>setTimeout(resolve,430)); appendStageOutput(event.text);
           say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
         }else if(event.type==='step'){
           const oldPosition=Math.min(15,S.zombie_steps);
-          applyBound(event.step.vars,true);showAttacks(event.step.attack_count);renderVars(event.step.vars);
+          applyBound(event.step.vars,true);if(showAttacks(event.step.attack_counts)&&pacedMoves++<60)await new Promise(resolve=>setTimeout(resolve,430));renderVars(event.step.vars);
           clearMarks();markLine(event.step.line,'run');
           // Keep fast loops visible without slowing the code execution worker.
           if(Math.min(15,S.zombie_steps)!==oldPosition&&pacedMoves++<60)await new Promise(resolve=>setTimeout(resolve,360));
@@ -1432,7 +1437,7 @@ async function executeCode(single){
       Object.assign(S,saved);
     }
     lastSteps=result.steps;
-    if(single){clearStageOutput();shownAttackCount=0;Object.assign(S,initial);resetZombieWalk();}
+    if(single){clearStageOutput();shownAttacks={pea:0,zombie:0};Object.assign(S,initial);resetZombieWalk();}
     let steps=single?result.steps:[];
     if(!single){
       let last=JSON.stringify(initial);
@@ -1442,13 +1447,13 @@ async function executeCode(single){
     for(let i=0;i<steps.length;i++){
       if(epoch!==replayEpoch)return;
       const st=steps[i]; clearMarks(); markLine(st.line,'run');
-      applyBound(st.vars,true); showAttacks(st.attack_count); renderVars(st.vars);
+      applyBound(st.vars,true); showAttacks(st.attack_counts); renderVars(st.vars);
       if(single){const printed=(result.transcript??result.stdout).slice(0,st.display_len??st.output_len??0);if(printed!==stagePrinted){stagePrinted=printed;showStageOutput(printed);}}
       if(single) say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span><br><span class="sys">第 '+(i+1)+' / '+steps.length+' 步 · 已执行第 '+st.line+' 行</span>');
       await new Promise(resolve=>setTimeout(resolve,single?650:180));
     }
     if(epoch!==replayEpoch)return;
-    applyBound(result.env,true); showAttacks(result.attack_count); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
+    applyBound(result.env,true); showAttacks(result.attack_counts); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
   }catch(e){
     say('<span class="err">'+escHtml(e.message)+'<br>请检查网站资源是否加载完整，刷新后重试；建议使用新版 Chrome / Edge。</span>');
   }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;}

@@ -1,6 +1,6 @@
 """Observe numeric C bindings without adding declarations or evaluating expressions twice."""
 import re
-BOUND={'hp_pea','hp_zombie','row_pea','row_zombie','x','remain_hp', 'zombie_steps','alive'}
+BOUND={'hp_pea','hp_zombie','row_pea','row_zombie','x','x_pea','x_zombie','remain_hp', 'zombie_steps','alive'}
 TOKEN=re.compile(r'(?P<skip>\s+|//[^\n]*|/\*[\s\S]*?\*/)|(?P<literal>"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')|(?P<pp>^[ \t]*\#[^\n]*(?:\\\n[^\n]*)*)|(?P<word>[A-Za-z_]\w*)|(?P<op>\+\+|--|\+=|-=|\*=|/=|%=|<<=|>>=|&=|\|=|\^=|==|!=|<=|>=|&&|\|\||->|<<|>>)|.',re.M)
 ASSIGN={'=','+=','-=','*=','/=','%=','<<=','>>=','&=','|=','^='}
 TYPES={'int','float','double','char','short','long','unsigned','signed','_Bool'}
@@ -52,17 +52,19 @@ def instrument(src):
                     if tokens[j][0]=='(':level+=1
                     if tokens[j][0]==')':level-=1
                     j+=1
-                # Find declarations visible at this call, excluding closed scopes.
                 scopes=[set()]
                 for k in range(i):
                     word=tokens[k][0]
                     if word=='{':scopes.append(set())
                     elif word=='}' and len(scopes)>1:scopes.pop()
-                    elif word in ('hp_zombie','x') and declaration(k)[0]:scopes[-1].add(word)
+                    elif word in BOUND and declaration(k)[0]:scopes[-1].add(word)
                 visible=set().union(*scopes)
-                if {'hp_zombie','x'} <= visible:
+                if {'hp_pea','hp_zombie','row_pea','row_zombie'} <= visible:
                     call=src[t[1]:tokens[j-1][2]]
-                    expr=f'_PVZ_ATTACK_CALL(({call}),hp_zombie,x,{t[3]})'
+                    dp='x_pea' if 'x_pea' in visible else '-1'
+                    dz='x_zombie' if 'x_zombie' in visible else '-1'
+                    steps_value='zombie_steps' if 'zombie_steps' in visible else '0'
+                    expr=f'_PVZ_DUAL_CALL(({call}),hp_pea,hp_zombie,row_pea,row_zombie,({steps_value}),({dp}),({dz}),{t[3]})'
                     out.extend([src[cursor:t[1]],expr]);cursor=tokens[j-1][2];i=j;continue
             if v=='scanf' and i+1<hi and tokens[i+1][0]=='(':
                 level=1;j=i+2

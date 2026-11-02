@@ -1,8 +1,8 @@
 """One fresh CPython process per run. Standard library only."""
-import sys, json, io, traceback, contextlib, linecache, math, builtins
+import sys, json, io, traceback, contextlib, linecache, math, builtins, re
 
 FILENAME = '草坪实战.py'
-BOUND = ('hp_pea', 'hp_zombie', 'row_pea', 'row_zombie', 'x', 'remain_hp', 'zombie_steps')
+BOUND = ('hp_pea', 'hp_zombie', 'row_pea', 'row_zombie', 'x', 'x_pea', 'x_zombie', 'remain_hp', 'zombie_steps')
 
 class LimitedOutput(io.StringIO):
     on_write = None
@@ -22,22 +22,36 @@ def main():
     # A fresh Python namespace: stage values are display state, never implicit variables.
     env = {'__name__': '__main__'}
     output = LimitedOutput()
-    attack_count = 0
+    attack_counts = {'pea': 0, 'zombie': 0}
     def classroom_print(*args, **kwargs):
-        nonlocal attack_count
         sep = kwargs.get('sep', ' ')
         text = (' ' if sep is None else sep).join(str(a) for a in args)
-        if text == '豌豆攻击' and kwargs.get('file') in (None, output):
+        match = re.fullmatch(r'(豌豆|僵尸)攻击(?:X|[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)?', text)
+        if match and kwargs.get('file') in (None, output):
             frame = sys._getframe(1)
             scope = frame.f_locals
-            hp, damage = scope.get('hp_zombie', env.get('hp_zombie')), scope.get('x', env.get('x'))
-            if type(hp) in (int, float) and type(damage) in (int, float) and math.isfinite(hp) and math.isfinite(damage):
-                remaining = max(0, hp - max(0, damage))
-                if scope is env or 'hp_zombie' not in scope:
-                    env['hp_zombie'] = remaining
+            def value(name):
+                if name in scope: v = scope[name]
+                elif name in env: v = env[name]
+                else: raise NameError("攻击指令需要先定义变量 '%s'" % name)
+                if type(v) not in (int, float) or not math.isfinite(v):
+                    raise ValueError('%s 必须为有限数值' % name)
+                return v
+            pea = match[1] == '豌豆'
+            damage_name = 'x_pea' if pea else 'x_zombie'
+            hp_pea, hp_zombie = value('hp_pea'), value('hp_zombie')
+            row_pea, row_zombie = value('row_pea'), value('row_zombie')
+            damage = value(damage_name)
+            if damage < 0: raise ValueError('%s 不能为负数' % damage_name)
+            valid = hp_pea > 0 and hp_zombie > 0 and row_pea == row_zombie
+            if valid:
+                target = 'hp_zombie' if pea else 'hp_pea'
+                remaining = max(0, (hp_zombie if pea else hp_pea) - damage)
+                if scope is env or target not in scope:
+                    env[target] = remaining
                 else:
-                    raise RuntimeError('攻击使用的 hp_zombie 请定义为全局变量；函数内请声明 global hp_zombie')
-            attack_count += 1
+                    raise RuntimeError('攻击目标生命值请定义为全局变量；函数内请声明 global ' + target)
+                attack_counts['pea' if pea else 'zombie'] += 1
         return builtins.print(*args, **kwargs)
     env['print'] = classroom_print
     steps = []
@@ -67,7 +81,7 @@ def main():
         frame = sys._getframe(1)
         while frame and frame.f_code.co_filename != FILENAME:
             frame = frame.f_back
-        emit({'type': 'output', 'text': value, 'line': frame.f_lineno if frame else 1, 'env': snapshot(), 'attack_count': attack_count})
+        emit({'type': 'output', 'text': value, 'line': frame.f_lineno if frame else 1, 'env': snapshot(), 'attack_counts': dict(attack_counts)})
     output.on_write = on_output
     def trace(frame, event, arg):
         nonlocal previous, events
@@ -78,7 +92,7 @@ def main():
             raise RuntimeError('课堂执行步数超过 20000，请检查循环；本次运行已停止')
         if event in ('line', 'return', 'exception'):
             if previous is not None and len(steps) < 1500:
-                step = {'line': previous, 'vars': snapshot(), 'desc': '执行第 %s 行后' % previous, 'output_len': output.utf16_units, 'attack_count': attack_count}
+                step = {'line': previous, 'vars': snapshot(), 'desc': '执行第 %s 行后' % previous, 'output_len': output.utf16_units, 'attack_counts': dict(attack_counts)}
                 steps.append(step)
                 emit({'type': 'step', 'step': step})
             previous = frame.f_lineno if event == 'line' else None
@@ -111,7 +125,7 @@ def main():
     finally:
         sys.stdin = original_stdin
     result = {'env': snapshot(), 'steps': steps, 'stdout': output.getvalue(), 'error': error,
-              'trace_truncated': events > 1500, 'attack_count': attack_count}
+              'trace_truncated': events > 1500, 'attack_counts': dict(attack_counts)}
     if stream:
         emit({'type': 'result', **result})
     else:

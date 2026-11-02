@@ -20,7 +20,7 @@ window.BrowserClassroom=(()=>{
  function reset(){worker?.terminate();worker=null;}
  function watchdog(ms){if(!current)return;clearTimeout(current.timer);current.timer=setTimeout(()=>{const c=current;reset();settle({type:'aborted',env:c.env,steps:[],stdout:c.stdout,error:{kind:'TimeoutError',line:1,traceback:'程序超过课堂运行时限，已停止。'}});},ms);}
  function getWorker(){
-  if(!worker){worker=new Worker(new URL('./engine-worker.js?v=20261102-attack',location.href),{type:'module'});
+  if(!worker){worker=new Worker(new URL('./engine-worker.js?v=20261102-dual-simple',location.href),{type:'module'});
    worker.onmessage=({data:e})=>{
     if(!current)return;
     if(e.type==='result'){settle(e);return;}

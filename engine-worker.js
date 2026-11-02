@@ -1,6 +1,6 @@
 /* Browser-only CPython + real Clang/LLVM; no requests to a code execution API. */
 let py=null,pyLoading=null,toolchain=null,tcLoading=null,instrumentC=null,runnerSource='',bridgeSource='';
-let request=null,control=null,shared=null,env={},steps=[],stdout='',diagnostics='',cLine=1,inputEvent=null,attackCount=0;
+let request=null,control=null,shared=null,env={},steps=[],stdout='',diagnostics='',cLine=1,inputEvent=null,attackCounts={pea:0,zombie:0};
 const decoder=new TextDecoder(),encoder=new TextEncoder();
 function emit(event){postMessage(event);}
 function status(text){emit({type:'status',text});}
@@ -23,7 +23,7 @@ async function ensurePython(){
  if(!pyLoading)pyLoading=(async()=>{
   status('首次加载 Python 运行环境…');const {loadPyodide}=await import('./vendor/pyodide/pyodide.mjs');
   py=await loadPyodide({indexURL:new URL('./vendor/pyodide/',self.location.href).href});
-  const [runner,instrument,bridge]=await Promise.all(['python_runner.py','c_instrument.py','c_bridge.h'].map(async p=>{const r=await fetch(new URL(p+"?v=20261102-attack",self.location.href),{cache:"no-store"});if(!r.ok)throw new Error('资源加载失败：'+p);return r.text();}));
+  const [runner,instrument,bridge]=await Promise.all(['python_runner.py','c_instrument.py','c_bridge.h'].map(async p=>{const r=await fetch(new URL(p+"?v=20261102-dual-simple",self.location.href),{cache:"no-store"});if(!r.ok)throw new Error('资源加载失败：'+p);return r.text();}));
   runnerSource=runner;bridgeSource=bridge;
   py.globals.set('_instrument_source',instrument);instrumentC=py.runPython('_instrument_ns = {}\nexec(_instrument_source, _instrument_ns)\n_instrument_ns["instrument"]');
   return py;
@@ -53,18 +53,21 @@ function handleCLine(line){
  const kind=event.type;
  if(kind==='var'){
   env[event.name]=event.value;cLine=event.line;
-  const step={line:event.line,vars:{...env},desc:'变量赋值后',output_len:stdout.length,attack_count:attackCount};
+  const step={line:event.line,vars:{...env},desc:'变量赋值后',output_len:stdout.length,attack_counts:{...attackCounts}};
   if(steps.length<1500)steps.push(step);emit({type:'step',step});
  }else if(kind==='output'){
-  if(event.text==='豌豆攻击'||event.text==='豌豆攻击\n')attackCount++;
   stdout+=event.text;cLine=event.line||cLine;
-  emit({type:'output',text:event.text,line:cLine,env:{...env},attack_count:attackCount});
-  if(steps.length<1500){const step={line:cLine,vars:{...env},desc:'printf 输出后',output_len:stdout.length,attack_count:attackCount};steps.push(step);emit({type:'step',step});}
+  emit({type:'output',text:event.text,line:cLine,env:{...env},attack_counts:{...attackCounts}});
+  if(steps.length<1500){const step={line:cLine,vars:{...env},desc:'printf 输出后',output_len:stdout.length,attack_counts:{...attackCounts}};steps.push(step);emit({type:'step',step});}
+ }else if(kind==='attack'){
+  attackCounts[event.actor]++;
+  const step={line:event.line,vars:{...env},desc:'有效攻击后',output_len:stdout.length,attack_counts:{...attackCounts}};
+  if(steps.length<1500)steps.push(step);emit({type:'step',step});
  }else if(kind==='input'){cLine=event.line||cLine;}
  else if(kind==='input_done')emit({type:'input_done'});
  else if(kind==='limit')throw new Error('程序超过课堂输出或执行步数限制');
 }
-function result(error=null){emit({type:'result',env,steps,stdout,error,diagnostics,trace_truncated:steps.length>=1500,attack_count:attackCount});}
+function result(error=null){emit({type:'result',env,steps,stdout,error,diagnostics,trace_truncated:steps.length>=1500,attack_counts:{...attackCounts}});}
 function compileError(compiled,kind){
  const lines=clangWasmToolchain.compilerDiagnostics(compiled.raw),message=lines.join('\n')||String(compiled.error?.message||compiled.error);
  const line=Number(message.match(/classroom\.c:(\d+)/)?.[1]||1);diagnostics=message;
@@ -91,7 +94,7 @@ async function runC(){
 }
 self.onmessage=async({data})=>{
  if(data.type!=='run')return;
- request=data.request;shared=data.shared;control=new Int32Array(shared,0,4);env={};steps=[];stdout='';diagnostics='';cLine=1;inputEvent=null;attackCount=0;
+ request=data.request;shared=data.shared;control=new Int32Array(shared,0,4);env={};steps=[];stdout='';diagnostics='';cLine=1;inputEvent=null;attackCounts={pea:0,zombie:0};
  try{if(request.language==='c')await runC();else await runPython();}
  catch(e){result({kind:'BrowserRuntimeError',line:cLine,traceback:String(e.stack||e)});}
 };
