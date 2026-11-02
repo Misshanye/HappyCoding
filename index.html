@@ -341,7 +341,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
 <p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x：0～200；remain_hp：独立计算变量；zombie_steps：僵尸累计行走步数（非负整数）。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
-<p>赋值 hp_zombie 改变血条和存活状态；赋值 row_pea / row_zombie 移动角色。remain_hp 不会自动覆盖 hp_zombie。需要攻击时请明确写 hp_zombie = max(0, hp_zombie - x)。alive 是普通变量，必须自行定义，需要时重新计算。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到达最左格；超过 15 步停在边界，变量保留实际值。每次运行从起点开始。Python 请先写 zombie_steps = 0，C 请先写 int zombie_steps = 0;。</p>
+<p>赋值 hp_zombie 改变血条和存活状态；赋值 row_pea / row_zombie 移动角色。remain_hp 不会自动覆盖 hp_zombie。只有执行 print("豌豆攻击") 才发动一次攻击并按 x 自动扣血（最低为 0），无需再写扣血赋值；C 使用 printf("豌豆攻击\n")。仅满足条件不会攻击。alive 是普通变量，必须自行定义，需要时重新计算。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到达最左格；超过 15 步停在边界，变量保留实际值。每次运行从起点开始。Python 请先写 zombie_steps = 0，C 请先写 int zombie_steps = 0;。</p>
 <label for="stdinText">预填输入（可选；留空则运行时逐次输入）</label><textarea id="stdinText" rows="2" style="width:100%;box-sizing:border-box" placeholder="例如：第一行输入行号，第二行输入攻击值"></textarea>
 </details>
 <div class="code-wrap">
@@ -374,7 +374,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 </div>
 <p class="foot">编程互动课堂 · 纯浏览器版 ｜ Python / C 真实执行 · 无需安装 · 无需运行服务器</p>
 </div>
-<script src="./browser-runtime.js"></script>
+<script src="./browser-runtime.js?v=20261102-attack"></script>
 <script src="./analytics-config.js"></script>
 <script src="./classroom-analytics.js"></script>
 <script>window.ClassroomAnalytics?.start();</script>
@@ -706,8 +706,7 @@ int main(void) {
     scanf("%d", &x);
 
     if (hp_pea > 0 && hp_zombie > 0 && row_pea == row_zombie) {
-        hp_zombie = hp_zombie - x;
-        if (hp_zombie < 0) hp_zombie = 0;
+        printf("豌豆攻击\\n");
         printf("命中！僵尸剩余血量：%d\\n", hp_zombie);
     } else {
         printf("本轮没有命中\\n");
@@ -1078,17 +1077,6 @@ function fireBullet(cb){
   });
   setTimeout(()=>{ b.remove(); if(cb) cb(); },570);
 }
-function playRound(){
-  if(!(S.hp_pea>0&&S.row_pea===S.row_zombie)) return;
-  // 手动改过 remain_hp 时就以手动值为准，不要被 x 反算覆盖
-  const remain=remainManual?S.remain_hp:clampv('remain_hp',Math.max(0,S.hp_zombie-S.x));
-  fireBullet(()=>{
-    const z=$('zomUnit'); z.classList.remove('hit'); void z.offsetWidth; z.classList.add('hit');
-    setTimeout(()=>z.classList.remove('hit'),380);
-    paintHp(remain);
-    if(remain<=0) setTimeout(()=>z.classList.add('die'),200);
-  });
-}
 /* ---------- 4.8 流程图高亮 ---------- */
 function paintFlow(SorNull){
   const root=$('flowBox').firstElementChild;
@@ -1106,7 +1094,7 @@ function paintFlow(SorNull){
     A(['n-start','e1','n-d1']);
     if(yes){ A(['e-d1-y','n-p1','e-p1','n-end']); D(['e-d1-n']); }
     else { A(['e-d1-n','n-end']); D(['e-d1-y','n-p1','e-p1']); }
-    $('flowLegend').innerHTML='本次路径：'+(yes?'<b>条件成立 → 打印并开火</b>':'<b>条件不成立 → 整段被跳过（一个字都不输出）</b>');
+    $('flowLegend').innerHTML='本次路径：'+(yes?'<b>条件成立 → 打印条件判断结果（不发动攻击）</b>':'<b>条件不成立 → 整段被跳过（一个字都不输出）</b>');
   } else if(lv.flowKind==='flow2'){
     const neg=(S.hp_zombie-S.x)<0;
     A(['n-start','e1','n-p0','e2','n-d1']);
@@ -1220,7 +1208,7 @@ x = int(input("请输入本次攻击值："))
 alive = hp_pea > 0
 
 if alive and hp_zombie > 0 and row_pea == row_zombie:
-    hp_zombie = max(0, hp_zombie - x)
+    print("豌豆攻击")
     print("命中！僵尸剩余血量：", hp_zombie)
 else:
     print("本轮没有命中")
@@ -1252,7 +1240,7 @@ function updateModeUI(){
   $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'';
   $('modeHelp').hidden=!free;
   if(free){
-    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有同行、射手存活且僵尸实际掉血，才播放命中动画。</p></div>';
+    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x → 攻击值；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。只有实际输出“豌豆攻击”才发动攻击、播放动画并按 x 自动扣血；不额外检查存活或同行条件，由代码中的条件判断决定。</p></div>';
     $('flowLegend').textContent='这是绑定说明。自由编程的实际执行顺序以代码行高亮为准。';
   }
   $('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;
@@ -1298,6 +1286,10 @@ function bindingWarnings(env){
   }
   return warnings;
 }
+let shownAttackCount=0;
+function showAttacks(count=0){
+  while(shownAttackCount<count){shownAttackCount++;fireBullet();$('zomUnit').classList.add('hit');}
+}
 function applyBound(env, animate=false){
   const old={...S};
   for(const k of Object.keys(LIMIT)){
@@ -1305,10 +1297,6 @@ function applyBound(env, animate=false){
     if(typeof v==='number'&&Number.isFinite(v)&&v>=lo&&v<=hi&&(!INTEGER_BINDINGS.has(k)||Number.isInteger(v))) S[k]=v;
   }
   syncControls(); placeUnits(); paintHp(S.hp_zombie);
-  // Visual effects never calculate damage or change Python variables.
-  if(animate&&S.hp_zombie<old.hp_zombie&&S.hp_pea>0&&S.row_pea===S.row_zombie){
-    fireBullet(); $('zomUnit').classList.add('hit');
-  }
   if(ideMode==='quiz') renderTask();
 }
 const baseStopDemo=stopDemo;
@@ -1380,7 +1368,7 @@ function showResult(result,before,judgeResult){
 async function executeCode(single){
   if(busy)return;
   stopDemo(); const epoch=replayEpoch;
-  clearMarks(); clearBullets(); clearStageOutput(); feedback.innerHTML=''; saveDraft();
+  clearMarks(); clearBullets(); clearStageOutput(); shownAttackCount=0; feedback.innerHTML=''; saveDraft();
   if(location.protocol==='file:'){ updateModeUI(); return; }
   resetZombieWalk();
   const before={}, initial={...S};
@@ -1413,11 +1401,11 @@ async function executeCode(single){
           return;
         }
         if(event.type==='output'){
-          applyBound(event.env,true); appendStageOutput(event.text);
+          applyBound(event.env,true); showAttacks(event.attack_count); appendStageOutput(event.text);
           say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span>');
         }else if(event.type==='step'){
           const oldPosition=Math.min(15,S.zombie_steps);
-          applyBound(event.step.vars,true);renderVars(event.step.vars);
+          applyBound(event.step.vars,true);showAttacks(event.step.attack_count);renderVars(event.step.vars);
           clearMarks();markLine(event.step.line,'run');
           // Keep fast loops visible without slowing the code execution worker.
           if(Math.min(15,S.zombie_steps)!==oldPosition&&pacedMoves++<60)await new Promise(resolve=>setTimeout(resolve,360));
@@ -1444,7 +1432,7 @@ async function executeCode(single){
       Object.assign(S,saved);
     }
     lastSteps=result.steps;
-    if(single){clearStageOutput();Object.assign(S,initial);resetZombieWalk();}
+    if(single){clearStageOutput();shownAttackCount=0;Object.assign(S,initial);resetZombieWalk();}
     let steps=single?result.steps:[];
     if(!single){
       let last=JSON.stringify(initial);
@@ -1454,13 +1442,13 @@ async function executeCode(single){
     for(let i=0;i<steps.length;i++){
       if(epoch!==replayEpoch)return;
       const st=steps[i]; clearMarks(); markLine(st.line,'run');
-      applyBound(st.vars,true); renderVars(st.vars);
+      applyBound(st.vars,true); showAttacks(st.attack_count); renderVars(st.vars);
       if(single){const printed=(result.transcript??result.stdout).slice(0,st.display_len??st.output_len??0);if(printed!==stagePrinted){stagePrinted=printed;showStageOutput(printed);}}
       if(single) say('<span>'+escHtml(stagePrinted).replace(/\n/g,'<br>')+'</span><br><span class="sys">第 '+(i+1)+' / '+steps.length+' 步 · 已执行第 '+st.line+' 行</span>');
       await new Promise(resolve=>setTimeout(resolve,single?650:180));
     }
     if(epoch!==replayEpoch)return;
-    applyBound(result.env,true); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
+    applyBound(result.env,true); showAttacks(result.attack_count); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
   }catch(e){
     say('<span class="err">'+escHtml(e.message)+'<br>请检查网站资源是否加载完整，刷新后重试；建议使用新版 Chrome / Edge。</span>');
   }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;}

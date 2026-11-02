@@ -46,6 +46,24 @@ def instrument(src):
                 name=tokens[i+1][0] if prefix else v
                 end=tokens[i+1][2];expr=src[t[1]:end]
                 out.extend([src[cursor:t[1]],f'_PVZ_VALUE({name},({expr}),{t[3]})']);cursor=end;i+=2;continue
+            if v in ('printf','puts','putchar') and i+1<hi and tokens[i+1][0]=='(':
+                level=1;j=i+2
+                while j<hi and level:
+                    if tokens[j][0]=='(':level+=1
+                    if tokens[j][0]==')':level-=1
+                    j+=1
+                # Find declarations visible at this call, excluding closed scopes.
+                scopes=[set()]
+                for k in range(i):
+                    word=tokens[k][0]
+                    if word=='{':scopes.append(set())
+                    elif word=='}' and len(scopes)>1:scopes.pop()
+                    elif word in ('hp_zombie','x') and declaration(k)[0]:scopes[-1].add(word)
+                visible=set().union(*scopes)
+                if {'hp_zombie','x'} <= visible:
+                    call=src[t[1]:tokens[j-1][2]]
+                    expr=f'_PVZ_ATTACK_CALL(({call}),hp_zombie,x,{t[3]})'
+                    out.extend([src[cursor:t[1]],expr]);cursor=tokens[j-1][2];i=j;continue
             if v=='scanf' and i+1<hi and tokens[i+1][0]=='(':
                 level=1;j=i+2
                 while j<hi and level:

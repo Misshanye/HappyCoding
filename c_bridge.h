@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-static int _pvz_events=0, _pvz_output_count=0;
+static int _pvz_events=0, _pvz_output_count=0, _pvz_attack_output=0;
 static void _pvz_quote(const char *s) {
     const unsigned char *p=(const unsigned char*)s;
     fputc('"',stdout);
@@ -25,8 +25,10 @@ static int _pvz_printf_at(int line,const char *fmt,...) {
     char text[64001];int n;va_list ap;va_start(ap,fmt);
     n=vsnprintf(text,sizeof(text),fmt,ap);va_end(ap);text[64000]=0;
     if(n<0||n>64000||(_pvz_output_count+=n)>64000){fputs("{\"type\":\"limit\"}\n",stdout);fflush(stdout);exit(125);}
+    _pvz_attack_output = !strcmp(text,"豌豆攻击") || !strcmp(text,"豌豆攻击\n");
     fputs("{\"type\":\"output\",\"text\":",stdout);_pvz_quote(text);fprintf(stdout,",\"line\":%d}\n",line);fflush(stdout);return n;
 }
+#define _PVZ_ATTACK_CALL(call,hp,damage,line) ({int _pvz_ret=(call);if(_pvz_attack_output){(hp)=(hp)>(damage)?(hp)-((damage)>0?(damage):0):0;_pvz_record("hp_zombie",(double)(hp),line);}_pvz_ret;})
 static int _pvz_puts_at(int line,const char *s){int n=_pvz_printf_at(line,"%s\n",s);return n<0?EOF:0;}
 static int _pvz_putchar_at(int line,int c){_pvz_printf_at(line,"%c",c);return (unsigned char)c;}
 #define _PVZ_VALUE(name,expression,line) ({__typeof__(expression) _pvz_temp=(expression);_pvz_record(#name,(double)(name),line);_pvz_temp;})

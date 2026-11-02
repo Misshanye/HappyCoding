@@ -1,5 +1,5 @@
 """One fresh CPython process per run. Standard library only."""
-import sys, json, io, traceback, contextlib, linecache, math
+import sys, json, io, traceback, contextlib, linecache, math, builtins
 
 FILENAME = '草坪实战.py'
 BOUND = ('hp_pea', 'hp_zombie', 'row_pea', 'row_zombie', 'x', 'remain_hp', 'zombie_steps')
@@ -22,6 +22,24 @@ def main():
     # A fresh Python namespace: stage values are display state, never implicit variables.
     env = {'__name__': '__main__'}
     output = LimitedOutput()
+    attack_count = 0
+    def classroom_print(*args, **kwargs):
+        nonlocal attack_count
+        sep = kwargs.get('sep', ' ')
+        text = (' ' if sep is None else sep).join(str(a) for a in args)
+        if text == '豌豆攻击' and kwargs.get('file') in (None, output):
+            frame = sys._getframe(1)
+            scope = frame.f_locals
+            hp, damage = scope.get('hp_zombie', env.get('hp_zombie')), scope.get('x', env.get('x'))
+            if type(hp) in (int, float) and type(damage) in (int, float) and math.isfinite(hp) and math.isfinite(damage):
+                remaining = max(0, hp - max(0, damage))
+                if scope is env or 'hp_zombie' not in scope:
+                    env['hp_zombie'] = remaining
+                else:
+                    raise RuntimeError('攻击使用的 hp_zombie 请定义为全局变量；函数内请声明 global hp_zombie')
+            attack_count += 1
+        return builtins.print(*args, **kwargs)
+    env['print'] = classroom_print
     steps = []
     previous = None
     events = 0
@@ -49,7 +67,7 @@ def main():
         frame = sys._getframe(1)
         while frame and frame.f_code.co_filename != FILENAME:
             frame = frame.f_back
-        emit({'type': 'output', 'text': value, 'line': frame.f_lineno if frame else 1, 'env': snapshot()})
+        emit({'type': 'output', 'text': value, 'line': frame.f_lineno if frame else 1, 'env': snapshot(), 'attack_count': attack_count})
     output.on_write = on_output
     def trace(frame, event, arg):
         nonlocal previous, events
@@ -60,7 +78,7 @@ def main():
             raise RuntimeError('课堂执行步数超过 20000，请检查循环；本次运行已停止')
         if event in ('line', 'return', 'exception'):
             if previous is not None and len(steps) < 1500:
-                step = {'line': previous, 'vars': snapshot(), 'desc': '执行第 %s 行后' % previous, 'output_len': output.utf16_units}
+                step = {'line': previous, 'vars': snapshot(), 'desc': '执行第 %s 行后' % previous, 'output_len': output.utf16_units, 'attack_count': attack_count}
                 steps.append(step)
                 emit({'type': 'step', 'step': step})
             previous = frame.f_lineno if event == 'line' else None
@@ -93,7 +111,7 @@ def main():
     finally:
         sys.stdin = original_stdin
     result = {'env': snapshot(), 'steps': steps, 'stdout': output.getvalue(), 'error': error,
-              'trace_truncated': events > 1500}
+              'trace_truncated': events > 1500, 'attack_count': attack_count}
     if stream:
         emit({'type': 'result', **result})
     else:
