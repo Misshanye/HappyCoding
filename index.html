@@ -58,6 +58,7 @@ h1,h2,h3,h4{line-height:1.35;font-weight:800;letter-spacing:.3px}
 /* ============ 关卡导航 ============ */
 .levelnav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);
   border-bottom:1px solid var(--line); box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.category-nav{border-bottom:1px solid #e0e8d9}.category-nav .chip{font-size:17px;min-width:130px;justify-content:center}
 .levelnav .wrap{display:flex;gap:8px;overflow-x:auto;padding:7px 18px}
 .chip{
   flex:0 0 auto; border:2px solid var(--line); background:#fff; border-radius:999px;
@@ -276,7 +277,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
   </div>
 </header>
 
-<nav class="levelnav"><div class="wrap" id="levelnav"></div></nav>
+<nav class="levelnav"><div class="wrap category-nav" id="categorynav" aria-label="教学结构"></div><div class="wrap" id="levelnav" aria-label="教学任务"></div></nav>
 
 <div class="wrap">
     <section class="card" id="questionCard">
@@ -693,6 +694,45 @@ LEVELS.forEach((lv,i)=>lv.tasks.forEach((t,j)=>{
  t.code_c=C_CASES[i][j];t.answer_c=[C_A1,C_A2,C_A3,C_A4][i];
  if((i===0&&j===1)||(i===0&&j===2))t.setup_c={...t.setup,row_pea:2,row_zombie:4};
 }));
+
+/* Learning categories keep independent tasks, drafts and correction progress. */
+LEVELS.forEach(lv=>lv.category='branch');
+function loopCase(id,name,code,answer,codeC,answerC,hint){
+  return {id,name,desc:hint,code,answer,code_c:codeC,answer_c:answerC,hint,
+    setup:{hp_pea:60,hp_zombie:100,row_pea:1,row_zombie:1,x_pea:20,x_zombie:10,zombie_steps:0}};
+}
+const LOOP_FOR='for i in range(3):\n    print("豌豆攻击X")';
+const LOOP_FOR_C='for (int i = 0; i < 3; i++) {\n    printf("豌豆攻击X\\n");\n}';
+const LOOP_WHILE='while hp_zombie > 0:\n    print("豌豆攻击X")';
+const LOOP_WHILE_C='while (hp_zombie > 0) {\n    printf("豌豆攻击X\\n");\n}';
+const LOOP_BREAK='for i in range(10):\n    if hp_zombie <= 0:\n        break\n    print("豌豆攻击X")';
+const LOOP_BREAK_C='for (int i = 0; i < 10; i++) {\n    if (hp_zombie <= 0) {\n        break;\n    }\n    printf("豌豆攻击X\\n");\n}';
+const LOOP_CONTINUE='for i in range(1, 6):\n    if i % 2 == 0:\n        continue\n    print("豌豆攻击X")';
+const LOOP_CONTINUE_C='for (int i = 1; i <= 5; i++) {\n    if (i % 2 == 0) {\n        continue;\n    }\n    printf("豌豆攻击X\\n");\n}';
+function addLoop(id,title,keyword,count,answer,answerC,variants){
+ const tasks=variants.map((v,j)=>loopCase(id+'-C'+(j+1),v[0],v[1],answer,v[2],answerC,v[3]));
+ LEVELS.push({id,category:'loop',chip:'任务 '+(LEVELS.length-3),title,flowKind:'loop',keyword,require:[],
+  mission:{R1:'使用 for 循环，让豌豆连续攻击 3 次。',R2:'使用 while 循环，持续攻击，直到僵尸血量降为 0。',R3:'最多循环 10 次；僵尸血量降为 0 时，用 break 立即结束循环。',R4:'遍历第 1～5 轮，用 continue 跳过偶数轮，仅在第 1、3、5 轮攻击。'}[id],
+  rule:'先初始化变量，再编写循环。执行一次攻击输出，才产生一次攻击；不要另写扣血语句。',
+  expect(){return {must:['豌豆攻击X'],ban:[],count};},expectText(){return '输出“豌豆攻击X” '+count+' 次';},tasks});
+}
+addLoop('R1','for 计数循环','for',3,LOOP_FOR,LOOP_FOR_C,[
+ ['循环少一次',LOOP_FOR.replace('range(3)','range(2)'),LOOP_FOR_C.replace('i < 3','i < 2'),'检查循环次数，目标为 3 次。'],
+ ['攻击语句移出循环',LOOP_FOR.replace('    print','print'),LOOP_FOR_C.replace('    printf("豌豆攻击X\\n");','').replace('}', '}\nprintf("豌豆攻击X\\n");'),'重复执行的语句应放在循环体内。'],
+ ['循环多一次',LOOP_FOR.replace('range(3)','range(4)'),LOOP_FOR_C.replace('i < 3','i <= 3'),'注意终止值是否包含在循环范围中。']]);
+addLoop('R2','while 条件循环','while',5,LOOP_WHILE,LOOP_WHILE_C,[
+ ['条件写反',LOOP_WHILE.replace('> 0','< 0'),LOOP_WHILE_C.replace('> 0','< 0'),'僵尸还有血量时才继续攻击。'],
+ ['过早停止',LOOP_WHILE.replace('> 0','> 20'),LOOP_WHILE_C.replace('> 0','> 20'),'最后剩余 20 点血量时，还需要再攻击一次。'],
+ ['关键字拼错',LOOP_WHILE.replace('while','whlie'),LOOP_WHILE_C.replace('while','whlie'),'条件循环的关键字是 while。']]);
+addLoop('R3','break 结束循环','break',5,LOOP_BREAK,LOOP_BREAK_C,[
+ ['退出条件写反',LOOP_BREAK.replace('<= 0','> 0'),LOOP_BREAK_C.replace('<= 0','> 0'),'应在僵尸血量降为 0 时退出。'],
+ ['忘记结束循环',LOOP_BREAK.replace('break','pass'),LOOP_BREAK_C.replace('break;',';'),'满足退出条件后应使用 break。'],
+ ['过早退出',LOOP_BREAK.replace('<= 0','<= 20'),LOOP_BREAK_C.replace('<= 0','<= 20'),'剩余 20 点血量时不能提前结束。']]);
+addLoop('R4','continue 跳过本轮','continue',3,LOOP_CONTINUE,LOOP_CONTINUE_C,[
+ ['误用 break',LOOP_CONTINUE.replace('continue','break'),LOOP_CONTINUE_C.replace('continue','break'),'continue 跳过本轮，break 会结束整个循环。'],
+ ['奇偶条件写反',LOOP_CONTINUE.replace('== 0','== 1'),LOOP_CONTINUE_C.replace('== 0','== 1'),'本题跳过偶数轮，保留奇数轮。'],
+ ['循环漏掉第 5 轮',LOOP_CONTINUE.replace('range(1, 6)','range(1, 5)'),LOOP_CONTINUE_C.replace('i <= 5','i < 5'),'遍历范围应包含第 5 轮。']]);
+
 const C_FREE_START=`#include <stdio.h>
 
 int main(void) {
@@ -828,6 +868,13 @@ function setVar(k,v){
 function syncAll(){ syncControls(); refreshStage(); if(ideMode==='quiz') renderTask(); renderVars({}); }
 /* Every provided case is a complete, visible Python program. */
 function fullCode(code){
+  if(curLevel().category==='loop'){
+    const names=['hp_pea','hp_zombie','row_pea','row_zombie','x_pea','x_zombie'];
+    const setup=curTask().setup;
+    if(selectedLanguage==='c')return '#include <stdio.h>\n\nint main(void) {\n'+names.map(k=>'    int '+k+' = '+setup[k]+';').join('\n')+'\n\n'+code.split('\n').map(l=>'    '+l).join('\n')+'\n    return 0;\n}\n';
+    return '# 先初始化变量，再执行循环。\n'+names.map(k=>k+' = '+setup[k]).join('\n')+'\n\n'+code;
+  }
+
   const inputs={L1:['hp_pea','hp_zombie','row_pea','row_zombie'],L2:['hp_zombie','x_pea'],L3:['hp_pea','hp_zombie','row_pea','row_zombie','x_pea'],L4:['hp_zombie']}[curLevel().id];
   const labels={hp_pea:'豌豆生命值',hp_zombie:'僵尸生命值',row_pea:'豌豆所在行',row_zombie:'僵尸所在行',x_pea:'本次攻击值'};
   const definitions=inputs.map(k=>`${k} = int(input("请输入${labels[k]}："))`).join('\n');
@@ -1015,6 +1062,13 @@ function renderEnvDiff(before,after){
 const norm=s=>String(s).replace(/\s+/g,'').replace(/[，。：:！!？?、,]/g,'');
 function judge(lv,out){
   const src=codeOnly();   // 只看题目代码部分，变量头部不算
+  if(lv.category==='loop'){
+    const clean=src.replace(/#[^\n]*|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,'').replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,'');
+    if(!new RegExp('\\b'+lv.keyword+'\\b').test(clean))return {ok:false,reason:'本题需要使用 '+lv.keyword+'。'};
+    const expected=lv.expect(S).count;
+    const valid=out.length===expected&&out.every(line=>line==='豌豆攻击X');
+    return {ok:valid,reason:valid?'':'应输出“豌豆攻击X” '+expected+' 次；请检查循环范围、条件和循环体。'};
+  }
   if(!/\bif\b/.test(src))
     return {ok:false,reason:'本关任务要用 <b>if 分支语句</b>做判断，直接 print 把结果硬输出不算过关。'};
   const req=lv.require||[];
@@ -1133,20 +1187,31 @@ function paintFlow(SorNull){
   }
 }
 /* ---------- 4.9 关卡 / 题目切换 ---------- */
+const CATEGORY_LABELS={branch:'分支结构',loop:'循环结构'};
+const categoryLast={branch:0,loop:4};
 function renderNav(){
+  const category=curLevel().category;
+  $('categorynav').innerHTML=Object.entries(CATEGORY_LABELS).map(([key,label])=>`<button class="chip${category===key?' on':''}" data-category="${key}" aria-pressed="${category===key}">${label}</button>`).join('');
   $('levelnav').innerHTML=LEVELS.map((l,i)=>{
-    const d=doneList(l).length, ok=d>=l.tasks.length;
-    return `<button class="chip${i===cur?' on':''}${ok?' done':''}" data-i="${i}"><span class="dot">${ok?'✓':(i+1)}</span>${l.chip} · ${levelTitle(l)}<span style="opacity:.75">案例 ${d}/${l.tasks.length}</span></button>`;
+    if(l.category!==category)return '';
+    const d=doneList(l).length,ok=d>=l.tasks.length;
+    const number=LEVELS.filter(lv=>lv.category===category).indexOf(l)+1;
+    return `<button class="chip${i===cur?' on':''}${ok?' done':''}" data-i="${i}"><span class="dot">${ok?'✓':number}</span>${levelTitle(l)}<span style="opacity:.75">案例 ${d}/${l.tasks.length}</span></button>`;
   }).join('');
-  const total=LEVELS.reduce((a,l)=>a+l.tasks.length,0);
-  const done=LEVELS.reduce((a,l)=>a+doneList(l).length,0);
-  $('badgeProgress').textContent=`已修正 ${done} / ${total} 个案例`;
+  const levels=LEVELS.filter(l=>l.category===category),total=levels.reduce((a,l)=>a+l.tasks.length,0),done=levels.reduce((a,l)=>a+doneList(l).length,0);
+  $('badgeProgress').textContent=CATEGORY_LABELS[category]+` · 已修正 ${done} / ${total} 个案例`;
 }
+$('categorynav').addEventListener('click',e=>{
+  const button=e.target.closest('[data-category]');if(!button||busy)return;
+  const next=button.dataset.category;if(next===curLevel().category)return;
+  categoryLast[curLevel().category]=cur;goLevel(categoryLast[next]);
+});
 $('levelnav').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(b) goLevel(+b.dataset.i); });
 function goLevel(i){
+  if(busy)return;
   userCode[curTask().id]=editor.value;
   cur=i; ansOpen=false; stopDemo();
-  loadTask(curLevel().tasks[0],false);   // 切关时套用本关第一题的战况
+  loadTask(curTask(),false);   // 保留该任务上次选择的错误案例
 }
 function loadTask(t,keepData){
   const lv=curLevel();
@@ -1159,7 +1224,7 @@ function loadTask(t,keepData){
   }
   editor.value=userCode[t.id]??fullCode(taskSource(t)); editor.scrollTop=0; fitStack();
   const flows={indent:flow0,flow1:flow1,flow2:flow2,flow3:flow3,flow4:flow4};
-  $('flowBox').innerHTML=flows[lv.flowKind]?flows[lv.flowKind]():'';
+  $('flowBox').innerHTML=lv.category==='loop'?'<div class="body"><b>'+escHtml(levelTitle(lv))+'</b><p>初始化 → 判断或取值 → 执行循环体 → 进入下一轮 → 结束</p><p>for：按次数重复；while：条件成立时重复；break：结束循环；continue：跳过本轮。</p><p>实际执行顺序以单步高亮为准。</p></div>':(flows[lv.flowKind]?flows[lv.flowKind]():'');
   if(selectedLanguage==='c')$('flowBox').querySelectorAll('text').forEach(n=>{
     n.textContent=n.textContent.replace(/print\(remain_hp\)/g,'printf("%d", remain_hp)').replace(/print\(0\)/g,'printf("%d", 0)').replace(/print\(/g,'printf(').replace('elif','else if');
   });
@@ -1173,7 +1238,7 @@ function renderTask(){
   const lv=curLevel(), t=curTask(), idx=lv.tasks.indexOf(t)+1;
   $('taskPill').textContent=idx+'/'+lv.tasks.length;
   $('taskBox').innerHTML=`
-    <div id="levelMission" style="font-size:16px;line-height:1.9"><b>🎯 任务 ${cur+1}：</b>${escHtml(lv.mission)}</div>
+    <div id="levelMission" style="font-size:16px;line-height:1.9"><b>🎯 任务 ${LEVELS.filter(l=>l.category===lv.category).indexOf(lv)+1}：</b>${escHtml(lv.mission)}</div>
     <div id="missionRule" style="line-height:1.8;margin:8px 0 14px;color:#52634a">${escHtml(lv.rule)}</div>
     <div class="quote" style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px">
       <div style="flex:1.3;min-width:230px"><b>当前战况</b>：${battleText()}</div>
@@ -1311,6 +1376,7 @@ function lockUI(yes){
   busy=yes;
   ['languageSelect','btnRun','btnStep','btnReload','modeQuiz','modeFree','btnNextTask','btnDice','btnResetStage'].forEach(id=>$(id).disabled=yes);
   $('levelnav').querySelectorAll('button').forEach(b=>b.disabled=yes);
+  $('categorynav').querySelectorAll('button').forEach(b=>b.disabled=yes);
   document.querySelectorAll('.ctl input').forEach(e=>e.disabled=yes);
   editor.readOnly=yes;
 }
