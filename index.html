@@ -341,8 +341,9 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 <span id="runtimeStatus" class="tag" hidden></span></div>
 <div id="modeHelp" class="codehint" style="margin-bottom:10px"></div>
 <details style="margin:10px 0"><summary>变量绑定说明 / 程序输入</summary>
-<p>row_pea、row_zombie：第 1～5 行整数；hp_pea、hp_zombie：0～100；x_pea / x_zombie：0～200；remain_hp：独立计算变量；zombie_steps：僵尸累计行走步数（非负整数）。必须先在代码中声明/初始化变量再使用；控件数值仅表示战场状态，不会在程序中隐藏定义变量。</p>
-<p>攻击力分别为 x_pea（豌豆）和 x_zombie（僵尸），均为 0～200。支持 print("豌豆攻击X")、print(f"豌豆攻击{x_pea}")，以及对应的僵尸写法；也兼容不带后缀的“豌豆攻击”“僵尸攻击”。实际伤害读取对应攻击力变量，输出的数字仅为展示。只有执行攻击输出指令且攻击条件满足，才播放命中动画并自动扣血，最低为 0；无需再写扣血赋值。豌豆攻击条件：双方存活且同一行；僵尸攻击条件与豌豆相同：双方存活且同一行。没有攻击指令、条件不满足、打印其他文字或仅计算 remain_hp 均不会造成攻击伤害。显式给 hp_pea / hp_zombie 赋值仍会直接同步血量。zombie_steps 每增加 1 向左走半格，每 2 步一格，15 步到最左格；每次运行从起点开始。使用变量前必须先声明或初始化，战场控件不会隐式定义程序变量。C 使用 printf("豌豆攻击X\n"); 或 printf("豌豆攻击%d\n", x_pea);，僵尸同理。</p>
+<p><b>变量：</b>先在代码中声明或初始化。行号 row_pea / row_zombie：1～5；血量 hp_pea / hp_zombie：0～100；攻击力 x_pea / x_zombie：0～200；remain_hp 仅保存计算结果。</p>
+<p><b>攻击：</b>双方存活且同行时，输出“豌豆攻击X”或“僵尸攻击X”触发动画并自动扣血，无需另写扣血代码。X 可保留字母，也可替换为数值。</p>
+<p><b>行走：</b>zombie_steps 从 0 开始，每增加 1 前进半格，15 步到最左格；每次运行从起点开始。</p>
 <label for="stdinText">预填输入（可选；留空则运行时逐次输入）</label><textarea id="stdinText" rows="2" style="width:100%;box-sizing:border-box" placeholder="例如：第一行输入行号，第二行输入攻击值"></textarea>
 </details>
 <div class="code-wrap">
