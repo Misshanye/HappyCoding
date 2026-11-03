@@ -9,7 +9,7 @@
   "classroom-analytics.js": "6acb86caf95cf9bf64162d1bb61449c346a275aa675361bd223bb2e6814d0116",
   "coi-serviceworker.js": "080a5bdf8cc8ac3d766e1222f9784e11cb6b3689af81cef270843dbd4509e3d3",
   "engine-worker.js": "13ad710b3ab019e404b23bc596ec427fafb6fc61409753f4ebad28a55a30796b",
-  "index.html": "bf2e4316f77fa4d586d19cfe992ec7f3f8f801adc48e469d45feccbc3190b05d",
+  "index.html": "f35fc0a02235c9b8e803d048decefa7ca1831d83a71f784ccee6b7d4282005c9",
   "learning-log-config.js": "fbbfaca301844816d0d71fa6c65e4457f6651a2739116eb4d5b8834be55377f2",
   "learning-log.js": "e332737184299241ace3814f60c865d60f90d081f6ec4209b8185e561bc93a7f",
   "licenses/CPython-LICENSE": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
@@ -38,5 +38,8 @@
   "学习记录部署说明.md": "b5ca74e15f82e5eddeae4103e98afa484b1b3f7127ec0b699f0207e8dee7b4d0",
   "本次更新说明.txt": "3197d0fd3b0a8e1667ebecf3b4722d7c11924dc89b7fddbf233f99d3674e1f07",
   "调试记录.txt": "ccb19384370207ba610c11cfe55b94c6968a47734ec5fc89ef76dd864bcfb340",
-  "部署说明_先看这里.txt": "502f16041b889cbac30c59bb63d5c5ccd7d4ae54dc55b3e23b7cf42d9148cd73"
+  "部署说明_先看这里.txt": "502f16041b889cbac30c59bb63d5c5ccd7d4ae54dc55b3e23b7cf42d9148cd73",
+  "survey-float.css": "5599c5d891645e5aa0b5d9e0d91fb8a84bb6e3a2625efdc789ade35d6cf75a02",
+  "survey-float.js": "8d3d2cc4eb4e7bbf42f8653b7672b38a7737283e20ae8a39c3e5a5b36d8eeaa2",
+  "survey-cat.png": "064bb6004fbae0177cfe2ec0dd3938a79cf8c188699a32d0bb4f8a9394dce8a8"
 }

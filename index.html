@@ -259,6 +259,7 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 @keyframes captionPulse{from{box-shadow:0 0 0 3px #ffd24b80}to{box-shadow:0 0 0 0 transparent}}
 .code-actions{flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:6px;padding-bottom:4px}.code-actions .btn{flex-shrink:0;font-size:13px;padding:9px 10px}.code-actions [hidden]{display:none!important}
 </style>
+<link rel="stylesheet" href="./survey-float.css?v=1">
 </head>
 <body>
 <header class="topbar">
@@ -1643,5 +1644,6 @@ updateModeUI();
 <script>
 BrowserClassroom.ready().then(()=>{document.getElementById('runtimeStatus').title='浏览器运行环境已就绪';}).catch(e=>{document.getElementById('runtimeStatus').hidden=false;document.getElementById('runtimeStatus').textContent=e.message;});
 </script>
+<script src="./survey-float.js?v=1"></script>
 </body>
 </html>
