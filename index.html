@@ -379,6 +379,8 @@ details.tip>summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--
 </div>
 <script src="./browser-runtime.js?v=20261102-dual-simple"></script>
 <script src="./analytics-config.js"></script>
+<script src="./learning-log-config.js"></script>
+<script src="./learning-log.js"></script>
 <script src="./classroom-analytics.js"></script>
 <script>window.ClassroomAnalytics?.start();</script>
 <script>
@@ -529,6 +531,68 @@ function flow4(){
   s+=fEnd(300,498,'n-end','结束');
   return flowSvg(700,530,s);
 }
+
+/* Actual reference flowcharts for the four loop tasks. */
+function loopFlow(id){
+  const attack=selectedLanguage==='c'?'printf("豌豆攻击X\\n");':'print("豌豆攻击X")';
+  const shot=(y)=>fBox(140,y,300,54,'n-attack',attack,'f-out')+`<text class="f-t" x="290" y="${y+43}" style="font-size:11px;fill:#65765d">有效攻击时自动扣血</text>`;
+  const body=(y)=>shot(y).replace(`y="${y+27}"`,`y="${y+19}"`);
+  let s=fStart(290,30,'n-start','开始');
+  s+=fLine('M290,52 L290,76','e-start');
+  s+=fBox(110,76,360,42,'n-init','初始化血量、行号和攻击力');
+  if(id==='R2'){
+    s+=fLine('M290,118 L290,154','e-init');
+    s+=fDia(290,190,300,72,'n-loop',['hp_zombie > 0 ？','僵尸仍然存活？']);
+    s+=fLine('M290,226 L290,266','e-loop-y');s+=fLab(310,247,'是');
+    s+=body(266);
+    s+=fLine('M290,320 L290,352 L70,352 L70,140 L290,140 L290,154','e-repeat');
+    s+=fLab(118,343,'下一轮');
+    s+=fLine('M440,190 L550,190 L550,416 L354,416','e-loop-n');s+=fLab(493,180,'否');
+    s+=fEnd(290,416,'n-end','结束');
+    return flowSvg(620,454,s);
+  }
+  const first=id==='R4'?1:0,stop=id==='R1'?3:id==='R3'?10:5;
+  s+=fLine('M290,118 L290,140','e-init');
+  s+=fBox(175,140,230,38,'n-count','i = '+first);
+  s+=fLine('M290,178 L290,208','e-count');
+  s+=fDia(290,244,280,72,'n-loop',[id==='R4'?'i ≤ 5 ？':('i &lt; '+stop+' ？'),'是否还有下一轮？']);
+  const loopBottom=id==='R1'?425:id==='R3'?530:540,endY=loopBottom+55;
+  s+=fLine(`M430,244 L565,244 L565,${endY} L354,${endY}`,'e-loop-n');s+=fLab(491,233,'否');
+  if(id==='R1'){
+    s+=fLine('M290,280 L290,310','e-loop-y');s+=fLab(310,297,'是');
+    s+=body(310);
+    s+=fLine('M290,364 L290,392','e-body');
+    s+=fBox(175,392,230,38,'n-update','进入下一轮：i 加 1');
+    s+=fLine('M175,411 L65,411 L65,193 L290,193 L290,208','e-repeat');
+    s+=fLab(108,402,'循环');
+  }else if(id==='R3'){
+    s+=fLine('M290,280 L290,318','e-loop-y');s+=fLab(309,300,'是');
+    s+=fDia(290,350,280,64,'n-break-test',['hp_zombie ≤ 0 ？','是否需要提前结束？']);
+    s+=fLine('M430,350 L505,350 L505,390','e-break-y');s+=fLab(465,339,'是');
+    s+=fBox(455,390,100,38,'n-break','break');
+    s+=fLine(`M505,428 L505,${endY} L354,${endY}`,'e-break-exit');
+    s+=fLine('M290,382 L290,416','e-break-n');s+=fLab(310,402,'否');
+    s+=body(416);
+    s+=fLine('M290,470 L290,500','e-body');
+    s+=fBox(175,500,230,38,'n-update','进入下一轮：i 加 1');
+    s+=fLine('M175,519 L65,519 L65,193 L290,193 L290,208','e-repeat');
+  }else{
+    s+=fLine('M290,280 L290,318','e-loop-y');s+=fLab(310,301,'是');
+    s+=fDia(290,350,280,64,'n-continue-test',['i % 2 == 0 ？','本轮是否为偶数轮？']);
+    s+=fLine('M430,350 L504,350 L504,399','e-continue-y');s+=fLab(464,339,'是');
+    s+=fBox(454,399,100,38,'n-continue','continue');
+    s+=fLine('M504,437 L504,489 L290,489 L290,510','e-skip');
+    s+=fLab(505,475,'跳过攻击');
+    s+=fLine('M290,382 L290,416','e-continue-n');s+=fLab(311,402,'否');
+    s+=body(416);
+    s+=fLine('M290,470 L290,510','e-body');
+    s+=fBox(175,510,230,38,'n-update','进入下一轮：i 加 1');
+    s+=fLine('M175,529 L65,529 L65,193 L290,193 L290,208','e-repeat');
+  }
+  s+=fEnd(290,endY,'n-end','结束');
+  return flowSvg(620,endY+40,s);
+}
+
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 /* =====================================================================
@@ -1224,8 +1288,9 @@ function loadTask(t,keepData){
   }
   editor.value=userCode[t.id]??fullCode(taskSource(t)); editor.scrollTop=0; fitStack();
   const flows={indent:flow0,flow1:flow1,flow2:flow2,flow3:flow3,flow4:flow4};
-  $('flowBox').innerHTML=lv.category==='loop'?'<div class="body"><b>'+escHtml(levelTitle(lv))+'</b><p>初始化 → 判断或取值 → 执行循环体 → 进入下一轮 → 结束</p><p>for：按次数重复；while：条件成立时重复；break：结束循环；continue：跳过本轮。</p><p>实际执行顺序以单步高亮为准。</p></div>':(flows[lv.flowKind]?flows[lv.flowKind]():'');
-  if(selectedLanguage==='c')$('flowBox').querySelectorAll('text').forEach(n=>{
+  $('flowBox').innerHTML=lv.category==='loop'?loopFlow(lv.id):(flows[lv.flowKind]?flows[lv.flowKind]():'');
+  $('flowLegend').textContent=lv.category==='loop'?'箭头表示执行方向；回路表示重复，break 直接结束，continue 跳到下一轮。':'这是本关任务参考流程；实际执行以单步高亮为准。';
+  if(selectedLanguage==='c'&&lv.category!=='loop')$('flowBox').querySelectorAll('text').forEach(n=>{
     n.textContent=n.textContent.replace(/print\(remain_hp\)/g,'printf("%d", remain_hp)').replace(/print\(0\)/g,'printf("%d", 0)').replace(/print\(/g,'printf(').replace('elif','else if');
   });
   $('tagLevel').textContent=lv.chip+' · '+levelTitle(lv);
@@ -1297,7 +1362,7 @@ function updateModeUI(){
   $('modeHelp').textContent=free?'自由编程：可任意编写 '+languageName+'，不进行题目判分。每次运行从空白变量环境开始，使用变量前必须先在代码中赋值；运行结果同步到战场。':'';
   $('modeHelp').hidden=!free;
   if(free){
-    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x_pea / x_zombie → 双方攻击力；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。执行攻击指令且双方存活、同行时，豌豆按 x_pea 扣血；僵尸还需走满 15 步到最左格，按 x_zombie 扣血。X 字母和数值输出均支持。</p></div>';
+    $('flowBox').innerHTML='<div class="body"><b>代码与角色的绑定</b><p>row_pea → 豌豆行 / 射手位置</p><p>row_zombie → 僵尸行 / 僵尸位置</p><p>hp_pea、hp_zombie → 生命值 / 存活状态</p><p>x_pea / x_zombie → 双方攻击力；remain_hp → 独立计算结果</p><p>zombie_steps → 僵尸累计步数：每 2 步一格，15 步到达最左格。必须先初始化为 0；每次运行从起点开始。</p><p>每次运行都需要在代码里先给变量赋值；普通运行实时同步，单步按实际执行行回放。执行攻击指令且双方存活、同行时，豌豆按 x_pea 扣血；僵尸按 x_zombie 扣血。X 字母和数值输出均支持。</p></div>';
     $('flowLegend').textContent='这是绑定说明。自由编程的实际执行顺序以代码行高亮为准。';
   }
   $('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;
@@ -1447,6 +1512,7 @@ async function executeCode(single){
   let latestEnv={};
   activeRunId=Date.now().toString(36)+Math.random().toString(36).slice(2);
   const interactive=!$('stdinText').value.trim();
+  const learningRun = window.ClassroomLearningLog?.beginRun(single?'step':'run');
   window.ClassroomAnalytics?.run({language:selectedLanguage,mode:ideMode,level:ideMode==='quiz'?curLevel().id:undefined,execution:single?'step':'run'});
   lockUI(true); say('<span class="sys">'+(selectedLanguage==='c'?'C 正在编译并运行…':'Python 正在运行…')+'</span>');
   try{
@@ -1483,6 +1549,8 @@ async function executeCode(single){
         }
       });
     });
+    // Record execution result before slow visual replay or cancellation.
+    window.ClassroomLearningLog?.endRun(learningRun,result);
     await presentation;
     if(result.type==='aborted'){
       result.env=latestEnv;result.steps=[];result.stdout=stagePrinted;result.trace_truncated=false;
@@ -1500,6 +1568,7 @@ async function executeCode(single){
       for(const step of result.steps)if(step.line<firstIf)Object.assign(inputEnv,step.vars);
       for(const k of Object.keys(LIMIT))if(typeof inputEnv[k]==='number')S[k]=inputEnv[k];
       assessment=judge(curLevel(),judgedOutput?lines:[]);
+      if(result.type!=='aborted')window.ClassroomLearningLog?.assessment(learningRun,assessment);
       Object.assign(S,saved);
     }
     lastSteps=result.steps;
@@ -1521,6 +1590,7 @@ async function executeCode(single){
     if(epoch!==replayEpoch)return;
     applyBound(result.env,true); showAttacks(result.attack_counts); if((result.transcript??result.stdout)!==stagePrinted){stagePrinted=result.transcript??result.stdout;showStageOutput(stagePrinted);} clearMarks(); showResult(result,before,assessment);
   }catch(e){
+    window.ClassroomLearningLog?.runtimeFailure(learningRun,e);
     say('<span class="err">'+escHtml(e.message)+'<br>请检查网站资源是否加载完整，刷新后重试；建议使用新版 Chrome / Edge。</span>');
   }finally{hideLiveInput();lockUI(false);$('runtimeStatus').textContent='';$('runtimeStatus').hidden=true;}
 }
@@ -1552,7 +1622,21 @@ document.querySelectorAll('.swap-visual').forEach(button=>button.addEventListene
 /* ---------- 启动 ---------- */
 LEVELS.forEach(l=>{ taskIdx[l.id]=l.tasks[0].id; });
 syncControls();
+window.ClassroomLearningLog?.setContextProvider(()=>({
+  module:curLevel().category, level:curLevel().id,
+  task:ideMode==='quiz'?curTask().id:'free', case:ideMode==='quiz'?curTask().id:'',
+  language:selectedLanguage,mode:ideMode, task_version:'20261102'
+}));
 loadTask(curLevel().tasks[0],true);
+window.ClassroomLearningLog?.syncContext();
+// Only explicit UI actions; never collect typed code or input values.
+for(const [id,action] of Object.entries({btnReload:'code_reset',btnStop:'stop',btnDice:'scene_randomize',btnResetStage:'scene_reset',btnAnswer:'answer_toggle'})){
+  document.getElementById(id)?.addEventListener('click',()=>window.ClassroomLearningLog?.record('learning_action',{action}));
+}
+for(const id of ['categorynav','levelnav','btnNextTask','modeQuiz','modeFree']){
+  document.getElementById(id)?.addEventListener('click',()=>queueMicrotask(()=>window.ClassroomLearningLog?.syncContext()));
+}
+document.getElementById('languageSelect')?.addEventListener('change',()=>queueMicrotask(()=>window.ClassroomLearningLog?.syncContext()));
 updateModeUI();
 
 </script>

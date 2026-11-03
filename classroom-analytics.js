@@ -1,4 +1,4 @@
-/* Anonymous aggregate metrics only. No code, input, output, names or persistent visitor IDs. */
+/* Legacy aggregate event names retained; learning-log.js supplies visitor association. */
 window.ClassroomAnalytics = (() => {
   const config = window.CLASSROOM_ANALYTICS_CONFIG || {};
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -9,12 +9,12 @@ window.ClassroomAnalytics = (() => {
     endpoint?.protocol === 'https:' && location.protocol !== 'file:' && !disabledByBrowser;
   let started = false, pending = Promise.resolve();
   const completed = new Set();
-  const allowedLevels = new Set(['L1', 'L2', 'L3', 'L4']);
+  
   function properties(value = {}) {
     const data = {};
     if (value.language === 'python' || value.language === 'c') data.language = value.language;
     if (value.mode === 'quiz' || value.mode === 'free') data.mode = value.mode;
-    if (allowedLevels.has(value.level)) data.level = value.level;
+    if (typeof value.level === 'string' && /^[a-zA-Z0-9_-]{1,40}$/.test(value.level)) data.level = value.level;
     if (value.execution === 'run' || value.execution === 'step') data.execution = value.execution;
     if (typeof value.case === 'string' && /^[a-zA-Z0-9_-]{1,40}$/.test(value.case)) data.case = value.case;
     return data;
@@ -27,20 +27,13 @@ window.ClassroomAnalytics = (() => {
       language: navigator.language || '', screen: `${screen.width}x${screen.height}`,
       title: '编程互动课堂', referrer: '',
     };
-    if (name) { payload.name = name; payload.data = properties(data); }
-    // Ordered, non-blocking requests; no retries that might double-count an accepted request.
-    pending = pending.then(async () => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
-      try {
-        await fetch(endpoint.href, {
-          method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'event', payload }), keepalive: true, signal: controller.signal,
-        });
-      } catch (_) { /* Analytics must never interfere with teaching. */ }
-      finally { clearTimeout(timer); }
-    });
+    if (name) { payload.name = name; payload.data = {...(window.ClassroomLearningLog?.context()||{}),...properties(data)}; }
+    // Shared durable transport; legacy event names are preserved.
+    if(window.ClassroomLearningLog) {
+      window.ClassroomLearningLog.enqueuePayload(payload);
+      return;
+    }
+
   }
   function start() {
     if (started || !enabled) return;
